@@ -148,6 +148,6 @@ returns table (
   -- check-ins com humor baixo (sinal)
   select 'checkin'::text, 'Humor baixo', c.free_note, 'medium', (c.day::text || ' 12:00')::timestamptz
   from checkins c where c.patient_id = p_patient and c.mood is not null and c.mood <= 2
-  order by at desc
+  order by 5 desc
   limit p_limit;
 $$;

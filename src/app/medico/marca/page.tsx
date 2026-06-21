@@ -8,6 +8,7 @@ export default function MarcaPage() {
   const supabase = createClient();
   const [name, setName] = useState("Mente Viva");
   const [accent, setAccent] = useState("#3B7A6B");
+  const [specialty, setSpecialty] = useState("psychiatry");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -15,8 +16,8 @@ export default function MarcaPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("doctors").select("brand_name, brand_accent").eq("id", user.id).single();
-      if (data) { setName(data.brand_name); setAccent(data.brand_accent); }
+      const { data } = await supabase.from("doctors").select("brand_name, brand_accent, specialty").eq("id", user.id).single();
+      if (data) { setName(data.brand_name); setAccent(data.brand_accent); if (data.specialty) setSpecialty(data.specialty); }
     })();
   }, []);
 
@@ -31,7 +32,7 @@ export default function MarcaPage() {
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("doctors").update({ brand_name: name, brand_accent: accent }).eq("id", user.id);
+    await supabase.from("doctors").update({ brand_name: name, brand_accent: accent, specialty }).eq("id", user.id);
     setSaved(true); setBusy(false);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -48,6 +49,22 @@ export default function MarcaPage() {
           <div style={{ padding: 19 }}>
             <label style={lbl}>Nome exibido</label>
             <input style={inp} value={name} onChange={(e) => setName(e.target.value)} maxLength={20} />
+
+            <label style={lbl}>Especialidade</label>
+            <div style={{ display: "flex", gap: 9, marginBottom: 8 }}>
+              {([["psychiatry", "Psiquiatria"], ["geriatrics", "Geriatria"]] as const).map(([v, l]) => (
+                <button key={v} type="button" onClick={() => setSpecialty(v)} style={{
+                  flex: 1, padding: "11px", borderRadius: 11,
+                  border: specialty === v ? "1.5px solid #1A1D1C" : "1.5px solid #E7E9E7",
+                  background: specialty === v ? "#1A1D1C" : "#fff",
+                  color: specialty === v ? "#fff" : "#646B67",
+                  fontSize: 14, fontWeight: 600, cursor: "pointer",
+                }}>{l}</button>
+              ))}
+            </div>
+            <p style={{ fontSize: 12.5, color: "#646B67", marginBottom: 8 }}>
+              Geriatria ativa o acompanhamento de polifarmácia e peso na ficha do paciente.
+            </p>
 
             <label style={lbl}>Cor da marca</label>
             <div style={{ display: "flex", gap: 9, marginBottom: 8, alignItems: "center" }}>

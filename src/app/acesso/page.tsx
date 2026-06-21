@@ -40,16 +40,16 @@ export default function AcessoPacientePage() {
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: 26, maxWidth: 420, margin: "0 auto" }}>
       <div style={{ width: 60, height: 60, borderRadius: 18, background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, marginBottom: 20 }}>M</div>
-      <h1 style={{ fontSize: 27, fontWeight: 800, letterSpacing: "-.02em" }}>Acesso do paciente</h1>
+      <h1 style={{ fontSize: 27, fontWeight: 800, letterSpacing: "-.02em" }}>Acesso</h1>
       <p style={{ color: "var(--label-2)", margin: "8px 0 22px" }}>
-        Entre com seu <b>CPF</b> e seu <b>telefone</b> (o mesmo que seu médico cadastrou).
+        Entre com os dados que seu médico cadastrou.
       </p>
 
-      <label style={lbl}>CPF</label>
-      <input style={inp} inputMode="numeric" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+      <label style={lbl}>Acesso</label>
+      <input style={inp} inputMode="numeric" placeholder="" value={cpf} onChange={(e) => setCpf(e.target.value)} autoComplete="off" />
 
-      <label style={lbl}>Telefone (com DDD)</label>
-      <input style={inp} inputMode="numeric" placeholder="(11) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      <label style={lbl}>Senha</label>
+      <input style={inp} type="password" inputMode="numeric" placeholder="" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="off" />
 
       {err && <p style={{ color: "var(--bad)", fontSize: 13, margin: "4px 4px 12px" }}>⚠ {err}</p>}
       <button style={btn} onClick={entrar} disabled={busy || cpf.length < 11}>{busy ? "Entrando..." : "Entrar"}</button>
