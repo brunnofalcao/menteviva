@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  /* whitelabel — sobrescrito por médico em runtime */
+  --accent:#3B7A6B;
+  --accent-soft:#E8F1EE;
+  --accent-ink:#1F4339;
+  --sys-bg:#EFEEF3;
+  --card:#FFFFFF;
+  --label:#1A1B1E;
+  --label-2:#6A6E78;
+  --ok:#2FA37C; --warn:#C8902F; --bad:#D2554C;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--sys-bg); color:var(--label);
+  font-family:-apple-system,system-ui,"Inter",sans-serif;
+  -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
+}

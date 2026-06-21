@@ -1,0 +1,14 @@
+project_id = "menteviva"
+
+[functions.send-reminders]
+verify_jwt = false
+
+# Cron: dispara o motor de lembretes a cada 5 minutos.
+# (No Supabase, agende via Dashboard > Database > Cron, ou pg_cron:)
+#   select cron.schedule('send-reminders','*/5 * * * *',
+#     $$ select net.http_post(
+#          url:='https://<PROJECT>.supabase.co/functions/v1/send-reminders',
+#          headers:='{"Authorization":"Bearer <SERVICE_ROLE>"}'::jsonb) $$);
+
+[functions.whatsapp-webhook]
+verify_jwt = false
