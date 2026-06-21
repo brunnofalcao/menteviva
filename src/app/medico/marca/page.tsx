@@ -8,7 +8,6 @@ export default function MarcaPage() {
   const supabase = createClient();
   const [name, setName] = useState("Mente Viva");
   const [accent, setAccent] = useState("#3B7A6B");
-  const [code, setCode] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -16,8 +15,8 @@ export default function MarcaPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("doctors").select("brand_name, brand_accent, invite_code").eq("id", user.id).single();
-      if (data) { setName(data.brand_name); setAccent(data.brand_accent); setCode(data.invite_code); }
+      const { data } = await supabase.from("doctors").select("brand_name, brand_accent").eq("id", user.id).single();
+      if (data) { setName(data.brand_name); setAccent(data.brand_accent); }
     })();
   }, []);
 
@@ -51,22 +50,32 @@ export default function MarcaPage() {
             <input style={inp} value={name} onChange={(e) => setName(e.target.value)} maxLength={20} />
 
             <label style={lbl}>Cor da marca</label>
-            <div style={{ display: "flex", gap: 9, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 9, marginBottom: 8, alignItems: "center" }}>
               {PRESETS.map((c) => (
                 <button key={c} onClick={() => setAccent(c)} aria-label={c}
                   style={{ width: 30, height: 30, borderRadius: 9, background: c, border: accent === c ? "2px solid #1A1D1C" : "2px solid transparent", cursor: "pointer" }} />
               ))}
-              <input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} style={{ width: 36, height: 30, border: "none", background: "none", cursor: "pointer" }} />
+              <input type="color" value={/^#[0-9A-Fa-f]{6}$/.test(accent) ? accent : "#3B7A6B"} onChange={(e) => setAccent(e.target.value)} style={{ width: 36, height: 30, border: "none", background: "none", cursor: "pointer" }} />
             </div>
-            {contrastOk(accent)
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ width: 26, height: 26, borderRadius: 7, background: /^#[0-9A-Fa-f]{6}$/.test(accent) ? accent : "#ccc", border: "1px solid #E7E9E7", flexShrink: 0 }} />
+              <input
+                value={accent}
+                onChange={(e) => {
+                  let v = e.target.value.trim();
+                  if (v && !v.startsWith("#")) v = "#" + v;
+                  setAccent(v);
+                }}
+                placeholder="#3B7A6B"
+                maxLength={7}
+                style={{ flex: 1, border: "1px solid #E7E9E7", borderRadius: 10, padding: "9px 12px", fontSize: 14, fontFamily: "monospace", textTransform: "uppercase" }}
+              />
+            </div>
+            {!/^#[0-9A-Fa-f]{6}$/.test(accent)
+              ? <div style={{ ...note, background: "#FAF0DA", color: "#8A6212" }}>Digite um código hexadecimal válido (ex.: #3B7A6B).</div>
+              : contrastOk(accent)
               ? <div style={{ ...note, background: "#E2F3EC", color: "#1E7A58" }}>✓ Contraste aprovado.</div>
               : <div style={{ ...note, background: "#FAF0DA", color: "#8A6212" }}>⚠ Cor clara: o texto sobre ela será escurecido automaticamente para manter a legibilidade.</div>}
-
-            <label style={lbl}>Código de convite</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <code style={{ background: "#F4F5F4", padding: "10px 14px", borderRadius: 10, fontWeight: 700, letterSpacing: ".1em" }}>{code || "—"}</code>
-              <span style={{ fontSize: 12.5, color: "#646B67" }}>Compartilhe com seus pacientes para vincularem.</span>
-            </div>
 
             <button onClick={save} disabled={busy} style={{ marginTop: 22, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 11, padding: "12px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {busy ? "..." : saved ? "Salvo ✓" : "Salvar marca"}

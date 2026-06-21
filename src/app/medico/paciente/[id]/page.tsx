@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import PrescribeForm from "./PrescribeForm";
+import EditMedForm from "./EditMedForm";
 import { applyProtocol, pauseMedication, deleteMedication } from "./actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
 
@@ -18,7 +19,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
   // medicamentos (prescritos e auto-incluídos) com tudo p/ gerenciar
   const { data: meds } = await supabase
     .from("medications")
-    .select("id, name, dose, form, times, frequency, source, active, channel")
+    .select("id, name, dose, form, times, frequency, source, active, channel, ends_at")
     .eq("patient_id", id)
     .order("source");
 
@@ -106,9 +107,10 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
               <span style={{ width: 38, height: 38, borderRadius: 11, background: v.color.bg, color: v.color.ink, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{v.shape}</span>
               <div style={{ flex: 1 }}>
                 <b style={{ fontSize: 14, opacity: m.active ? 1 : 0.5 }}>{m.name} {m.dose}</b>
-                <div style={{ fontSize: 12.5, color: "#646B67" }}>{(m.times ?? []).join(" e ")} · {fmtFreq(m.frequency)} · {m.channel === "whatsapp" ? "WhatsApp" : "Notificação"}</div>
+                <div style={{ fontSize: 12.5, color: "#646B67" }}>{(m.times ?? []).join(" e ")} · {fmtFreq(m.frequency)} · {m.channel === "whatsapp" ? "WhatsApp" : "Notificação"}{m.ends_at ? ` · até ${new Date(m.ends_at + "T00:00:00").toLocaleDateString("pt-BR")}` : " · contínuo"}</div>
               </div>
               {!m.active && <span style={badgeY}>Pausado</span>}
+              <EditMedForm med={m} patientId={id} />
               <form action={pauseMedication}>
                 <input type="hidden" name="medId" value={m.id} />
                 <input type="hidden" name="patientId" value={id} />

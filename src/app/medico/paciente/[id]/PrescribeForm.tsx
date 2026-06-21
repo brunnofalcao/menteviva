@@ -5,11 +5,21 @@ import { prescribeMedication } from "./actions";
 export default function PrescribeForm({ patientId }: { patientId: string }) {
   const [open, setOpen] = useState(false);
   const [times, setTimes] = useState<string[]>(["08:00"]);
+  const [duration, setDuration] = useState<"continuous" | "until">("continuous");
 
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} style={openBtn}>+ Prescrever medicamento</button>
     );
+  }
+
+  // sugestões rápidas de período
+  function setDays(days: number) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    const iso = d.toISOString().slice(0, 10);
+    setDuration("until");
+    const input = document.getElementById("ends_at_input") as HTMLInputElement | null;
+    if (input) input.value = iso;
   }
 
   return (
@@ -36,6 +46,22 @@ export default function PrescribeForm({ patientId }: { patientId: string }) {
         <option value="as_needed">Quando precisar (S.O.S.)</option>
       </select>
 
+      <label style={lbl}>Duração do tratamento</label>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <button type="button" onClick={() => setDuration("continuous")} style={{ ...durBtn, ...(duration === "continuous" ? durOn : {}) }}>Contínuo</button>
+        <button type="button" onClick={() => setDuration("until")} style={{ ...durBtn, ...(duration === "until" ? durOn : {}) }}>Por um período</button>
+      </div>
+      {duration === "until" && (
+        <div style={{ background: "var(--accent-soft, #EEF3F1)", borderRadius: 11, padding: 12, marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 9, flexWrap: "wrap" }}>
+            {[["7 dias", 7], ["14 dias", 14], ["30 dias", 30]].map(([l, n]) => (
+              <button key={l as string} type="button" onClick={() => setDays(n as number)} style={quickChip}>{l}</button>
+            ))}
+          </div>
+          <label style={{ ...lbl, marginTop: 0 }}>Tomar até o dia</label>
+          <input id="ends_at_input" type="date" name="ends_at" style={inp} />
+        </div>
+      )}
       <label style={lbl}>Horários</label>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {times.map((t, i) => (
@@ -71,3 +97,6 @@ const addChip: React.CSSProperties = { padding: "9px 13px", borderRadius: 11, ba
 const x: React.CSSProperties = { background: "none", border: "none", color: "var(--accent-ink)", cursor: "pointer", fontSize: 12 };
 const saveBtn: React.CSSProperties = { background: "var(--accent)", color: "#fff", border: "none", borderRadius: 11, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer" };
 const cancelBtn: React.CSSProperties = { background: "transparent", color: "#646B67", border: "none", padding: "12px 16px", fontWeight: 600, fontSize: 14, cursor: "pointer" };
+const durBtn: React.CSSProperties = { flex: 1, padding: "11px 8px", borderRadius: 11, border: "1.5px solid #E7E9E7", background: "#fff", fontSize: 13.5, fontWeight: 600, color: "#646B67", cursor: "pointer" };
+const durOn: React.CSSProperties = { borderColor: "var(--accent)", background: "var(--accent-soft, #EEF3F1)", color: "var(--accent-ink, #2C6BBF)" };
+const quickChip: React.CSSProperties = { padding: "7px 12px", borderRadius: 9, border: "none", background: "#fff", fontSize: 12.5, fontWeight: 600, color: "#646B67", cursor: "pointer" };

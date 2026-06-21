@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase";
 
 const items = [
   { href: "/medico", label: "Visão geral", short: "Início", icon: <><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></> },
   { href: "/medico/pacientes", label: "Pacientes", short: "Pacientes", icon: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5" /><circle cx="17.5" cy="9" r="2" /></> },
-  { href: "/medico/config", label: "Lembretes & módulos", short: "Lembretes", icon: <><path d="M6 8a6 6 0 0112 0c0 7 3 7 3 9H3c0-2 3-2 3-9" /><path d="M10 21h4" /></> },
+  { href: "/medico/config", label: "Mensagens", short: "Mensagens", icon: <><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" /></> },
   { href: "/medico/equipe", label: "Equipe & permissões", short: "Equipe", icon: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5" /><circle cx="17.5" cy="9" r="2" /><path d="M21 20c0-2.5-1.8-4-4-4" /></> },
   { href: "/medico/marca", label: "Marca & whitelabel", short: "Marca", icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></> },
 ];
@@ -16,7 +17,14 @@ function isActive(path: string, href: string) {
 
 export default function DoctorNav({ brandName, initial, docName, crm }: { brandName: string; initial: string; docName: string; crm: string }) {
   const path = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
   const initials = docName.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+
+  async function logout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   return (
     <>
@@ -38,7 +46,10 @@ export default function DoctorNav({ brandName, initial, docName, crm }: { brandN
         <div style={{ flex: 1 }} />
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 8px", borderTop: "1px solid rgba(255,255,255,.08)" }}>
           <div style={av}>{initials}</div>
-          <div><b style={{ color: "#fff", fontSize: 13 }}>{docName}</b><small style={{ display: "block", color: "#7d857e", fontSize: 11 }}>{crm || "Psiquiatra"}</small></div>
+          <div style={{ flex: 1, minWidth: 0 }}><b style={{ color: "#fff", fontSize: 13 }}>{docName}</b><small style={{ display: "block", color: "#7d857e", fontSize: 11 }}>{crm || "Psiquiatra"}</small></div>
+          <button onClick={logout} aria-label="Sair" title="Sair" style={{ background: "rgba(255,255,255,.06)", border: "none", borderRadius: 9, padding: "8px 9px", cursor: "pointer", color: "#98a39c" }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+          </button>
         </div>
       </aside>
 
@@ -47,7 +58,10 @@ export default function DoctorNav({ brandName, initial, docName, crm }: { brandN
         <div style={{ ...logo, width: 32, height: 32, fontSize: 15 }}>{initial}</div>
         <b style={{ fontSize: 16 }}>{brandName}</b>
         <div style={{ flex: 1 }} />
-        <div style={{ ...av, width: 30, height: 30, fontSize: 11 }}>{initials}</div>
+        <button onClick={logout} aria-label="Sair" style={{ display: "flex", alignItems: "center", gap: 7, background: "#F4F5F4", border: "none", borderRadius: 10, padding: "7px 11px", cursor: "pointer", color: "#646B67", fontWeight: 600, fontSize: 13 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+          Sair
+        </button>
       </header>
 
       {/* ===== TAB BAR (mobile) ===== */}

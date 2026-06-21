@@ -52,8 +52,8 @@ export default function LoginPage() {
       {mode === "signup" && (
         <input style={inp} placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} />
       )}
-      <input style={inp} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input style={inp} type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <input style={inp} type="email" name="email" autoComplete="username" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input style={inp} type="password" name="password" autoComplete="current-password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />
 
       {err && <p style={{ color: "var(--bad)", fontSize: 13, margin: "4px 4px 12px" }}>⚠ {err}</p>}
 

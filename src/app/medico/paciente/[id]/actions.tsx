@@ -13,6 +13,8 @@ export async function prescribeMedication(formData: FormData) {
   const form = String(formData.get("form"));
   const frequency = String(formData.get("frequency"));
   const channel = String(formData.get("channel"));
+  const endsAtRaw = String(formData.get("ends_at") || "").trim();
+  const ends_at = endsAtRaw || null;
   const times = String(formData.get("times"))
     .split(",").map((t) => t.trim()).filter(Boolean);
 
@@ -21,10 +23,31 @@ export async function prescribeMedication(formData: FormData) {
   await supabase.from("medications").insert({
     patient_id: patientId,
     source: "doctor",
-    name, dose, form, frequency, times, channel,
+    name, dose, form, frequency, times, channel, ends_at,
     created_by: user.id,
   });
-  // o trigger no banco gera as doses automaticamente
+  revalidatePath(`/medico/paciente/${patientId}`);
+}
+
+export async function editMedication(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const medId = String(formData.get("medId"));
+  const patientId = String(formData.get("patientId"));
+  const name = String(formData.get("name")).trim();
+  const dose = String(formData.get("dose")).trim();
+  const form = String(formData.get("form"));
+  const frequency = String(formData.get("frequency"));
+  const channel = String(formData.get("channel"));
+  const endsAtRaw = String(formData.get("ends_at") || "").trim();
+  const ends_at = endsAtRaw || null;
+  const times = String(formData.get("times")).split(",").map((t) => t.trim()).filter(Boolean);
+  if (!name || times.length === 0) return;
+
+  await supabase.from("medications")
+    .update({ name, dose, form, frequency, times, channel, ends_at })
+    .eq("id", medId);
+  // regenera doses futuras conforme a edição
+  await supabase.rpc("generate_doses", { p_med: medId });
   revalidatePath(`/medico/paciente/${patientId}`);
 }
 
