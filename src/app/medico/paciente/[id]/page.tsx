@@ -4,7 +4,7 @@ import EditMedForm from "./EditMedForm";
 import AddSupportForm from "./AddSupportForm";
 import EventForm from "./EventForm";
 import PreConsultAI from "./PreConsultAI";
-import { applyProtocol, pauseMedication, deleteMedication } from "./actions";
+import { applyProtocol, toggleModule, pauseMedication, deleteMedication } from "./actions";
 import { removeSupportMember } from "./support-actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
 
@@ -71,6 +71,11 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
   const { data: poly } = isGeriatrics
     ? await supabase.rpc("polypharmacy_review", { p_patient: id })
     : { data: null };
+
+  // módulos de check-in ativos do paciente
+  const { data: patientModules } = await supabase
+    .from("patient_modules").select("module, enabled").eq("patient_id", id);
+  const moduleState = new Map((patientModules ?? []).map((m) => [m.module, m.enabled]));
 
   const { data: adh } = await supabase.rpc("adherence_rate", { p_patient: id, p_days: 30 });
 
@@ -169,9 +174,38 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
             </form>
           ))}
         </div>
-        <p style={{ padding: "0 16px 14px", fontSize: 12.5, color: "#646B67" }}>
-          Define quais módulos de check-in o paciente verá (humor, energia, sono, atividade…).
-        </p>
+        <div style={{ padding: "0 16px 8px" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#9BA29D", textTransform: "uppercase", letterSpacing: ".05em", margin: "4px 0 11px" }}>O que o paciente registra no check-in</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 14 }}>
+            {([
+              ["mood", "Humor"], ["anxiety", "Ansiedade"], ["sleep", "Sono"],
+              ["energy", "Energia"], ["appetite", "Apetite"], ["irritability", "Irritabilidade"],
+              ["activity", "Atividade"], ["side_effects", "Efeitos colaterais"], ["free_note", "Observação livre"],
+            ] as const).map(([mod, label]) => {
+              const on = moduleState.get(mod) ?? false;
+              return (
+                <form key={mod} action={toggleModule}>
+                  <input type="hidden" name="patientId" value={id} />
+                  <input type="hidden" name="module" value={mod} />
+                  <input type="hidden" name="enabled" value={String(on)} />
+                  <button style={{
+                    display: "flex", alignItems: "center", gap: 7, padding: "8px 13px", borderRadius: 10,
+                    border: on ? "1.5px solid var(--accent)" : "1.5px solid #E7E9E7",
+                    background: on ? "var(--accent-soft, #EEF3F1)" : "#fff",
+                    color: on ? "var(--accent-ink, #2C6BBF)" : "#646B67",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  }}>
+                    <span style={{ width: 16, height: 16, borderRadius: 5, background: on ? "var(--accent)" : "#D4D7D4", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>{on ? "✓" : ""}</span>
+                    {label}
+                  </button>
+                </form>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 12.5, color: "#646B67", paddingBottom: 14 }}>
+            Clique num protocolo acima para aplicar um conjunto pronto, ou ligue/desligue cada item manualmente. Menos campos = mais adesão.
+          </p>
+        </div>
       </section>
 
       {/* RESUMO IA PRÉ-CONSULTA */}

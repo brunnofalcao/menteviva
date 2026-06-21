@@ -80,7 +80,7 @@ export default function DoctorNav({ brandName, initial, docName, crm }: { brandN
   );
 }
 
-const side: React.CSSProperties = { background: "#10160F", color: "#c2cbc4", padding: "22px 15px", flexDirection: "column", gap: 3 };
+const side: React.CSSProperties = { background: "#10160F", color: "#c2cbc4", padding: "22px 15px", flexDirection: "column", gap: 3, position: "sticky", top: 0, height: "100vh", overflowY: "auto", flexShrink: 0 };
 const logo: React.CSSProperties = { width: 36, height: 36, borderRadius: 11, background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, flexShrink: 0 };
 const nav: React.CSSProperties = { display: "flex", alignItems: "center", gap: 11, padding: "11px 12px", borderRadius: 11, fontSize: 14, fontWeight: 600, color: "#98a39c", textDecoration: "none" };
 const navOn: React.CSSProperties = { background: "rgba(255,255,255,.09)", color: "#fff" };

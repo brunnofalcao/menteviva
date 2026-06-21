@@ -59,6 +59,17 @@ export async function applyProtocol(formData: FormData) {
   revalidatePath(`/medico/paciente/${patientId}`);
 }
 
+export async function toggleModule(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const patientId = String(formData.get("patientId"));
+  const module = String(formData.get("module"));
+  const enabled = String(formData.get("enabled")) === "true";
+  // liga/desliga o módulo para este paciente (upsert)
+  await supabase.from("patient_modules")
+    .upsert({ patient_id: patientId, module, enabled: !enabled }, { onConflict: "patient_id,module" });
+  revalidatePath(`/medico/paciente/${patientId}`);
+}
+
 export async function pauseMedication(formData: FormData) {
   const supabase = await createServerSupabase();
   const medId = String(formData.get("medId"));

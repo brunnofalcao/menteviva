@@ -25,8 +25,8 @@ export default async function MedicoLayout({ children }: { children: React.React
     .mv-main{ min-height:100vh; }
     /* DESKTOP (>= 768px): sidebar fixa à esquerda */
     @media (min-width: 768px){
-      .mv-shell{ display:grid; grid-template-columns:248px 1fr; }
-      .mv-sidebar{ display:flex; }
+      .mv-shell{ display:grid; grid-template-columns:248px 1fr; align-items:start; }
+      .mv-sidebar{ display:flex; align-self:start; }
       .mv-tabbar{ display:none; }
       .mv-main{ overflow:auto; }
     }
