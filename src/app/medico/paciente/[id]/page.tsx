@@ -4,6 +4,7 @@ import EditMedForm from "./EditMedForm";
 import AddSupportForm from "./AddSupportForm";
 import EventForm from "./EventForm";
 import PreConsultAI from "./PreConsultAI";
+import DiagnosisSection from "./DiagnosisSection";
 import { applyProtocol, toggleModule, pauseMedication, deleteMedication } from "./actions";
 import { removeSupportMember } from "./support-actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
@@ -162,20 +163,13 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
         <Kpi n={String(selfMeds.length)} l="Auto-incluídos" />
       </div>
 
-      {/* PROTOCOLO POR DIAGNÓSTICO */}
+      {/* DIAGNÓSTICO (livre + atalhos) */}
+      <DiagnosisSection patientId={id} current={p?.diagnosis_label ?? null} />
+
+      {/* MÓDULOS DE CHECK-IN */}
       <section style={{ ...panel, marginBottom: 18 }}>
-        <div style={ph}><b>Protocolo / diagnóstico</b></div>
-        <div style={{ padding: 16, display: "flex", gap: 9, flexWrap: "wrap" }}>
-          {PROTOCOLS.map((proto) => (
-            <form key={proto} action={applyProtocol}>
-              <input type="hidden" name="patientId" value={id} />
-              <input type="hidden" name="protocol" value={proto} />
-              <button style={{ ...protoChip, ...(p?.diagnosis_label === proto ? protoOn : {}) }}>{proto}</button>
-            </form>
-          ))}
-        </div>
-        <div style={{ padding: "0 16px 8px" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#9BA29D", textTransform: "uppercase", letterSpacing: ".05em", margin: "4px 0 11px" }}>O que o paciente registra no check-in</div>
+        <div style={ph}><b>O que o paciente registra no check-in</b></div>
+        <div style={{ padding: 16 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 14 }}>
             {([
               ["mood", "Humor"], ["anxiety", "Ansiedade"], ["sleep", "Sono"],
@@ -202,8 +196,8 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
               );
             })}
           </div>
-          <p style={{ fontSize: 12.5, color: "#646B67", paddingBottom: 14 }}>
-            Clique num protocolo acima para aplicar um conjunto pronto, ou ligue/desligue cada item manualmente. Menos campos = mais adesão.
+          <p style={{ fontSize: 12.5, color: "#646B67" }}>
+            Ligue ou desligue o que o paciente vê no check-in. Menos campos = mais adesão.
           </p>
         </div>
       </section>

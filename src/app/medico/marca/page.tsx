@@ -9,6 +9,8 @@ export default function MarcaPage() {
   const [name, setName] = useState("Mente Viva");
   const [accent, setAccent] = useState("#3B7A6B");
   const [specialty, setSpecialty] = useState("psychiatry");
+  const [docName, setDocName] = useState("");
+  const [crm, setCrm] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -16,8 +18,10 @@ export default function MarcaPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("doctors").select("brand_name, brand_accent, specialty").eq("id", user.id).single();
-      if (data) { setName(data.brand_name); setAccent(data.brand_accent); if (data.specialty) setSpecialty(data.specialty); }
+      const { data } = await supabase.from("doctors").select("brand_name, brand_accent, specialty, crm").eq("id", user.id).single();
+      if (data) { setName(data.brand_name); setAccent(data.brand_accent); if (data.specialty) setSpecialty(data.specialty); setCrm(data.crm ?? ""); }
+      const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+      if (prof) setDocName(prof.full_name ?? "");
     })();
   }, []);
 
@@ -32,16 +36,27 @@ export default function MarcaPage() {
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("doctors").update({ brand_name: name, brand_accent: accent, specialty }).eq("id", user.id);
+    await supabase.from("doctors").update({ brand_name: name, brand_accent: accent, specialty, crm }).eq("id", user.id);
+    await supabase.from("profiles").update({ full_name: docName }).eq("id", user.id);
     setSaved(true); setBusy(false);
     setTimeout(() => setSaved(false), 2000);
   }
 
   return (
     <div className="mv-page" style={{ maxWidth: 820 }}>
-      <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Marca & whitelabel</div>
-      <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Sua marca</h1>
-      <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>O app do paciente assume a identidade da sua clínica.</p>
+      <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Configurações</div>
+      <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Configurações</h1>
+      <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>Seus dados e a identidade visual que o paciente vê.</p>
+
+      <section style={{ ...panel, marginBottom: 18 }}>
+        <div style={ph}><b>Seus dados</b></div>
+        <div style={{ padding: 18 }}>
+          <label style={lbl}>Seu nome</label>
+          <input style={inp} value={docName} onChange={(e) => setDocName(e.target.value)} placeholder="Dr(a). Nome Sobrenome" />
+          <label style={lbl}>CRM</label>
+          <input style={inp} value={crm} onChange={(e) => setCrm(e.target.value)} placeholder="000000" />
+        </div>
+      </section>
 
       <div className="mv-split-2">
         <section style={panel}>

@@ -25,7 +25,51 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { cpf: rawCpf, phone: rawPhone } = await req.json();
+    const body = await req.json();
+    const action = body.action ?? "login";
+
+    // ── MODO: médico cria paciente JÁ ATIVO (ficha existe na hora) ──
+    if (action === "create") {
+      const cpf = onlyDigits(body.cpf);
+      const phone = onlyDigits(body.phone);
+      const full_name = (body.full_name ?? "").trim();
+      const doctor_id = body.doctor_id;
+      const diagnosis = body.diagnosis ?? null;
+      if (cpf.length < 11) return json({ ok: false, error: "CPF inválido" }, 400);
+      if (!full_name) return json({ ok: false, error: "Nome obrigatório" }, 400);
+      if (!doctor_id) return json({ ok: false, error: "Médico não identificado" }, 400);
+
+      const email = cpfToEmail(cpf);
+      // já existe?
+      const { data: existing } = await db.auth.admin.listUsers();
+      let uid = existing.users.find((u) => u.email === email)?.id;
+
+      if (!uid) {
+        const { data: created, error: cErr } = await db.auth.admin.createUser({
+          email, password: phone, email_confirm: true,
+          user_metadata: { full_name, role: "patient" },
+        });
+        if (cErr || !created.user) return json({ ok: false, error: cErr?.message ?? "falha ao criar" }, 500);
+        uid = created.user.id;
+      }
+
+      await db.from("profiles").upsert({ id: uid, role: "patient", full_name });
+      await db.from("patients").upsert({
+        id: uid, doctor_id, cpf, phone,
+        diagnosis_label: diagnosis, consent_at: new Date().toISOString(),
+      });
+      if (diagnosis) await db.rpc("apply_protocol", { p_patient: uid, p_protocol: diagnosis });
+      // registra/atualiza o invite como já ativado (some do "aguardando acesso")
+      await db.from("patient_invites").upsert({
+        doctor_id, full_name, cpf, phone, diagnosis_label: diagnosis,
+        activated_at: new Date().toISOString(),
+      }, { onConflict: "cpf" });
+
+      return json({ ok: true, patient_id: uid });
+    }
+
+    // ── MODO: login do paciente (CPF + telefone) ──
+    const { cpf: rawCpf, phone: rawPhone } = body;
     const cpf = onlyDigits(rawCpf);
     const phone = onlyDigits(rawPhone);
     if (cpf.length < 11) return json({ ok: false, error: "CPF inválido" }, 400);
@@ -37,7 +81,6 @@ Deno.serve(async (req) => {
     const user = existing.users.find((u) => u.email === email);
 
     if (user) {
-      // já ativado — é login normal. Devolve as credenciais internas p/ o front logar.
       return json({ ok: true, email, password_hint: "telefone", existing: true });
     }
 

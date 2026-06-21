@@ -59,6 +59,14 @@ export async function applyProtocol(formData: FormData) {
   revalidatePath(`/medico/paciente/${patientId}`);
 }
 
+export async function setDiagnosis(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const patientId = String(formData.get("patientId"));
+  const text = String(formData.get("diagnosis") || "");
+  await supabase.rpc("set_diagnosis", { p_patient: patientId, p_text: text });
+  revalidatePath(`/medico/paciente/${patientId}`);
+}
+
 export async function toggleModule(formData: FormData) {
   const supabase = await createServerSupabase();
   const patientId = String(formData.get("patientId"));
