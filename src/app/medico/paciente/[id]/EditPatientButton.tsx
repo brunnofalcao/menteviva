@@ -6,7 +6,7 @@ export default function EditPatientButton({ patientId, name, phone }: { patientI
   const [open, setOpen] = useState(false);
 
   if (!open) {
-    return <button onClick={() => setOpen(true)} style={btn}>✏️ Editar dados</button>;
+    return <button onClick={() => setOpen(true)} style={btn}>🔒 Editar dados</button>;
   }
 
   return (

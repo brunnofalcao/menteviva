@@ -64,6 +64,9 @@ export default function PerfilPage() {
         <a href="/app/rede" style={{ textDecoration: "none", color: "inherit" }}>
           <Row icon="👥" title="Minha rede" hint="Quem cuida de você"><span style={{ color: "#A4A8B2" }}>›</span></Row>
         </a>
+        <a href="/app/saude" style={{ textDecoration: "none", color: "inherit" }}>
+          <Row icon="❤️" title="Saúde Conectada" hint="Apple Saúde / Health Connect"><span style={{ color: "#A4A8B2" }}>›</span></Row>
+        </a>
       </div>
 
       <button onClick={logout} style={{ width: "100%", background: "var(--card)", color: "var(--bad)", border: "none", borderRadius: 16, padding: 15, fontWeight: 700, fontSize: 15, marginTop: 20, cursor: "pointer" }}>Sair</button>

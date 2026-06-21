@@ -6,13 +6,30 @@ export async function searchCID(term: string, version = "10") {
   const supabase = await createServerSupabase();
   const t = term.trim();
   if (t.length < 2) return [];
-  const { data } = await supabase
+
+  // sanitiza o termo para o PostgREST (remove vírgulas e parênteses que quebram o .or())
+  const safe = t.replace(/[(),]/g, " ").trim();
+
+  // busca por descrição (mais comum) — ilike é case-insensitive
+  const byDesc = await supabase
     .from("cid_catalog")
     .select("code, description, chapter, version")
     .eq("version", version)
-    .or(`code.ilike.${t}%,description.ilike.%${t}%`)
+    .ilike("description", `%${safe}%`)
     .limit(20);
-  return data ?? [];
+
+  // busca por código (prefixo) — ex.: "F41"
+  const byCode = await supabase
+    .from("cid_catalog")
+    .select("code, description, chapter, version")
+    .eq("version", version)
+    .ilike("code", `${safe}%`)
+    .limit(20);
+
+  // junta sem duplicar
+  const map = new Map<string, { code: string; description: string; chapter: string; version: string }>();
+  for (const r of [...(byCode.data ?? []), ...(byDesc.data ?? [])]) map.set(r.code, r);
+  return [...map.values()].slice(0, 20);
 }
 
 export async function setDiagnosisWithCID(patientId: string, label: string, cid: string, version: string) {
