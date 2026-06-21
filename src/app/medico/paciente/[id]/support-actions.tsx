@@ -61,10 +61,24 @@ export async function registerEvent(formData: FormData) {
   const severity = String(formData.get("severity") || "low");
   const note = String(formData.get("note") || "").trim() || null;
 
+  // eventos críticos geram alerta no motor de notificação
+  const CRITICAL = ["suicidal_ideation", "self_harm", "fall", "aggression", "hospitalization", "emergency_visit"];
+  const isCritical = CRITICAL.includes(type) || severity === "high";
+
   await supabase.from("patient_events").insert({
     patient_id: patientId, category, type, severity, note,
     reported_by: user.id, reporter_role: "doctor",
+    generated_alert: isCritical,
   });
+
+  if (isCritical) {
+    // enfileira notificação para o médico (disparo real quando a API conectar)
+    await supabase.rpc("queue_notification", {
+      p_patient: patientId, p_recipient: user.id, p_role: "doctor",
+      p_channel: "dashboard", p_trigger: type,
+      p_body: `Evento crítico registrado: ${type}`, p_entity: "event", p_entity_id: null,
+    });
+  }
   revalidatePath(`/medico/paciente/${patientId}`);
 }
 

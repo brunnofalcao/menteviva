@@ -97,7 +97,7 @@ returns table (
   select
     count(*),
     count(*) filter (where status = 'taken'),
-    count(*) filter (where status in ('skipped','missed')),
+    count(*) filter (where status = 'skipped'),
     count(*) filter (where status = 'refused'),
     count(*) filter (where confirmed_role = 'caregiver'),
     count(*) filter (where confirmed_role = 'nurse'),

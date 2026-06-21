@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+import { issueReport } from "./report-actions";
 
 const EVENT_LABEL: Record<string, string> = {
   fall: "Queda", dizziness: "Tontura", confusion: "Confusão", anxiety_crisis: "Crise de ansiedade",
@@ -14,6 +16,19 @@ const FREQ: Record<string, string> = { daily: "diário", alternate: "dias altern
 export default function ReportView({ kind, data }: { kind: string; data: any }) {
   const isFamily = kind === "familia";
   const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const [issued, setIssued] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function emitir() {
+    setSaving(true);
+    const title = `Relatório ${isFamily ? "Familiar" : "Clínico"} — ${data.patientName}`;
+    const r = await issueReport(data.patientId, isFamily ? "family" : "clinical", title, {
+      adherence: data.adherence, meds: data.meds, events: data.events,
+      warnings: data.warnings, diagnosis: data.diagnosis, generated_at: new Date().toISOString(),
+    });
+    setSaving(false);
+    if (r.ok) setIssued(true);
+  }
 
   return (
     <div style={{ background: "#F2F3F2", minHeight: "100vh", padding: "20px 0" }}>
@@ -25,6 +40,9 @@ export default function ReportView({ kind, data }: { kind: string; data: any }) 
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <a href={`/medico/paciente/${data.patientId}`} style={btnGhost}>← Voltar</a>
+          <button onClick={emitir} disabled={saving || issued} style={{ ...btnGhost, borderColor: issued ? "#43A57C" : "#DcDdDc", color: issued ? "#1E7A58" : "#555" }}>
+            {issued ? "✓ Emitido" : saving ? "Emitindo..." : "Emitir e salvar"}
+          </button>
           <button onClick={() => window.print()} style={btnPrimary}>Imprimir / Salvar PDF</button>
         </div>
       </div>
