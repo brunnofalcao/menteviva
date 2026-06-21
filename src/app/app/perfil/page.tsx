@@ -60,8 +60,8 @@ export default function PerfilPage() {
 
       <div style={sect}>Conta</div>
       <div style={list}>
-        <Row icon="📄" title="O que meu médico vê" hint="Transparência total"><span style={{ color: "#A4A8B2" }}>›</span></Row>
-        <Row icon="👥" title="Avisar um familiar" hint="Após faltas seguidas"><span style={{ color: "#A4A8B2" }}>›</span></Row>
+        <Row icon="📄" title="O que meu médico vê" hint="Suas doses e check-ins. Nada além disso."><span style={{ color: "#C4C8CE", fontSize: 12 }}>em breve</span></Row>
+        <Row icon="👥" title="Avisar um familiar" hint="Seu médico pode ativar isso para você"><span style={{ color: "#C4C8CE", fontSize: 12 }}>em breve</span></Row>
       </div>
 
       <button onClick={logout} style={{ width: "100%", background: "var(--card)", color: "var(--bad)", border: "none", borderRadius: 16, padding: 15, fontWeight: 700, fontSize: 15, marginTop: 20, cursor: "pointer" }}>Sair</button>

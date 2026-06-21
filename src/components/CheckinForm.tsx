@@ -45,8 +45,8 @@ export default function CheckinForm({ enabled, existing }: { enabled: string[]; 
   if (done) return (
     <main style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
       <div style={{ fontSize: 56 }}>🌙</div>
-      <p style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>Registrado.</p>
-      <p style={{ color: "var(--label-2)" }}>Cuide-se bem hoje.</p>
+      <p style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>Obrigado por registrar</p>
+      <p style={{ color: "var(--label-2)" }}>Isso ajuda seu médico a cuidar de você.</p>
     </main>
   );
 

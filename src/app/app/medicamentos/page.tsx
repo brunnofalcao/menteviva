@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import Link from "next/link";
+import { medVisual, medSubtitle } from "@/lib/med-visual";
 
 export default async function MedsPage() {
   const supabase = await createServerSupabase();
@@ -8,7 +9,7 @@ export default async function MedsPage() {
 
   const { data: meds } = await supabase
     .from("medications")
-    .select("id, name, dose, times, frequency, source, active")
+    .select("id, name, dose, times, frequency, source, active, form")
     .eq("patient_id", user.id)
     .eq("active", true)
     .order("source");
@@ -16,28 +17,32 @@ export default async function MedsPage() {
   const byDoctor = (meds ?? []).filter((m) => m.source === "doctor");
   const byPatient = (meds ?? []).filter((m) => m.source === "patient");
 
-  const Item = ({ m, mine }: { m: any; mine?: boolean }) => (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Item = ({ m, mine }: { m: any; mine?: boolean }) => {
+    const v = medVisual(m.name, m.form);
+    return (
     <div style={item}>
-      <span style={{ ...icon, background: mine ? "#F7EFDE" : "var(--accent-soft)" }}>{mine ? "🟡" : "💊"}</span>
+      <span style={{ ...icon, background: v.color.bg, color: v.color.ink }}>{v.shape}</span>
       <span style={{ flex: 1 }}>
         <b style={{ display: "block", fontSize: 15 }}>{m.name} {m.dose ? <span style={{ fontWeight: 400, color: "var(--label-2)" }}>{m.dose}</span> : null}</b>
-        <span style={{ fontSize: 12.5, color: "var(--label-2)" }}>{(m.times ?? []).join(" e ")} · {fmtFreq(m.frequency)}</span>
+        <span style={{ fontSize: 12.5, color: "var(--label-2)" }}>{medSubtitle(m.name, m.form)} · {(m.times ?? []).join(" e ")}</span>
       </span>
-      <span style={mine ? badgeY : badgeG}>{mine ? "Você" : "Ativo"}</span>
+      {mine && <span style={badgeY}>Você</span>}
     </div>
-  );
+    );
+  };
 
   return (
     <main style={wrap}>
       <h1 style={{ fontSize: 30, fontWeight: 800, padding: "8px 4px 16px" }}>Medicamentos</h1>
 
-      <div style={sect}>🩺 Prescritos pelo médico</div>
+      <div style={sect}>Prescritos pelo seu médico</div>
       <div style={list}>
         {byDoctor.length ? byDoctor.map((m) => <Item key={m.id} m={m} />) :
           <p style={empty}>Nenhuma prescrição ativa.</p>}
       </div>
 
-      <div style={sect}>✋ Adicionados por você</div>
+      <div style={sect}>Adicionados por você</div>
       <div style={list}>
         {byPatient.length ? byPatient.map((m) => <Item key={m.id} m={m} mine />) :
           <p style={empty}>Você ainda não adicionou nada.</p>}

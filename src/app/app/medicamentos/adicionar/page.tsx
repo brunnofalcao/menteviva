@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import type { MedFrequency, ReminderChannel } from "@/types/db";
+import { medVisual, medSubtitle } from "@/lib/med-visual";
 
 export default function AddMedPage() {
   const router = useRouter();
@@ -38,6 +39,19 @@ export default function AddMedPage() {
 
       <label style={lbl}>Nome do medicamento</label>
       <input style={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Vitamina D" />
+
+      {name.trim() && (() => {
+        const v = medVisual(name, form);
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--card)", borderRadius: 16, padding: "12px 14px", marginTop: 11, boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+            <span style={{ width: 44, height: 44, borderRadius: 13, background: v.color.bg, color: v.color.ink, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21 }}>{v.shape}</span>
+            <div>
+              <b style={{ display: "block", fontSize: 15 }}>{name}{dose ? ` ${dose}` : ""}</b>
+              <span style={{ fontSize: 12.5, color: "var(--label-2)" }}>{medSubtitle(name, form)}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ display: "flex", gap: 11 }}>
         <div style={{ flex: 1 }}><label style={lbl}>Dose</label><input style={inp} value={dose} onChange={(e) => setDose(e.target.value)} placeholder="50 mg" /></div>
