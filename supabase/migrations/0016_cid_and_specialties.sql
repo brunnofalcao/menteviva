@@ -22,7 +22,7 @@ create index if not exists cid_code_idx on cid_catalog (code);
 -- catálogo é leitura pública (qualquer médico autenticado busca)
 alter table cid_catalog enable row level security;
 drop policy if exists "cid leitura autenticada" on cid_catalog;
-create policy "cid leitura autenticada" on cid_catalog for select using (auth.role() = 'authenticated');
+create policy "cid leitura publica" on cid_catalog for select using (true);
 
 -- ------------------------------------------------------------
 -- 2) DIAGNÓSTICO do paciente passa a guardar o código CID
