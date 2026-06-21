@@ -5,6 +5,7 @@ import AddSupportForm from "./AddSupportForm";
 import EventForm from "./EventForm";
 import PreConsultAI from "./PreConsultAI";
 import DiagnosisSection from "./DiagnosisSection";
+import EditPatientButton from "./EditPatientButton";
 import { applyProtocol, toggleModule, pauseMedication, deleteMedication } from "./actions";
 import { removeSupportMember } from "./support-actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
@@ -31,7 +32,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
 
   const { data: patient } = await supabase
     .from("patients")
-    .select("diagnosis_label, profiles(full_name), checkins(day, mood, energy, sleep_hours, side_effects, free_note)")
+    .select("diagnosis_label, cid_code, phone, profiles(full_name), checkins(day, mood, energy, sleep_hours, side_effects, free_note)")
     .eq("id", id)
     .single();
 
@@ -114,6 +115,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {atRisk && <span style={badgeRisk}>⚠ Em risco de abandono</span>}
+          <EditPatientButton patientId={id} name={p?.profiles?.full_name ?? ""} phone={p?.phone ?? null} />
           <a href={`/medico/paciente/${id}/relatorio`} style={{ padding: "9px 15px", borderRadius: 10, background: "#fff", border: "1px solid #E7E9E7", fontSize: 13.5, fontWeight: 600, color: "#1A1D1C", textDecoration: "none" }}>📄 Gerar relatório</a>
         </div>
       </div>
@@ -164,7 +166,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* DIAGNÓSTICO (livre + atalhos) */}
-      <DiagnosisSection patientId={id} current={p?.diagnosis_label ?? null} />
+      <DiagnosisSection patientId={id} current={p?.diagnosis_label ?? null} currentCode={p?.cid_code ?? null} />
 
       {/* MÓDULOS DE CHECK-IN */}
       <section style={{ ...panel, marginBottom: 18 }}>

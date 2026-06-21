@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
+import SpecialtiesManager from "./SpecialtiesManager";
 
 const PRESETS = ["#3B7A6B", "#3F5DAE", "#7A4BB5", "#C4892B", "#B5485E", "#1A1B2E"];
 
@@ -11,6 +12,8 @@ export default function MarcaPage() {
   const [specialty, setSpecialty] = useState("psychiatry");
   const [docName, setDocName] = useState("");
   const [crm, setCrm] = useState("");
+  const [specialties, setSpecialties] = useState<{ id: string; profession: string; specialty: string; rqe: string | null }[]>([]);
+  const [locked, setLocked] = useState(true);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -22,6 +25,8 @@ export default function MarcaPage() {
       if (data) { setName(data.brand_name); setAccent(data.brand_accent); if (data.specialty) setSpecialty(data.specialty); setCrm(data.crm ?? ""); }
       const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
       if (prof) setDocName(prof.full_name ?? "");
+      const { data: specs } = await supabase.from("doctor_specialties").select("id, profession, specialty, rqe").eq("doctor_id", user.id);
+      if (specs) setSpecialties(specs);
     })();
   }, []);
 
@@ -33,12 +38,13 @@ export default function MarcaPage() {
   }
 
   async function save() {
+    if (!confirm("Deseja realmente salvar as alterações?")) return;
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setBusy(false); return; }
     await supabase.from("doctors").update({ brand_name: name, brand_accent: accent, specialty, crm }).eq("id", user.id);
     await supabase.from("profiles").update({ full_name: docName }).eq("id", user.id);
-    setSaved(true); setBusy(false);
+    setSaved(true); setBusy(false); setLocked(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
@@ -46,15 +52,32 @@ export default function MarcaPage() {
     <div className="mv-page" style={{ maxWidth: 820 }}>
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Configurações</div>
       <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Configurações</h1>
-      <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>Seus dados e a identidade visual que o paciente vê.</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+        <p style={{ color: "#646B67", fontSize: 14 }}>Seus dados e a identidade visual que o paciente vê.</p>
+        <button onClick={() => setLocked(!locked)} style={{
+          display: "flex", alignItems: "center", gap: 7, padding: "9px 15px", borderRadius: 10,
+          border: locked ? "1px solid #E7E9E7" : "1.5px solid var(--accent)",
+          background: locked ? "#fff" : "var(--accent-soft, #EEF3F1)",
+          color: locked ? "#646B67" : "var(--accent-ink, #2C6BBF)", fontWeight: 700, fontSize: 13.5, cursor: "pointer",
+        }}>
+          {locked ? "🔒 Editar" : "🔓 Editando"}
+        </button>
+      </div>
 
-      <section style={{ ...panel, marginBottom: 18 }}>
+      <section style={{ ...panel, marginBottom: 18, opacity: locked ? 0.7 : 1 }}>
         <div style={ph}><b>Seus dados</b></div>
         <div style={{ padding: 18 }}>
           <label style={lbl}>Seu nome</label>
-          <input style={inp} value={docName} onChange={(e) => setDocName(e.target.value)} placeholder="Dr(a). Nome Sobrenome" />
+          <input style={{ ...inp, background: locked ? "#F4F5F4" : "#fff" }} value={docName} onChange={(e) => setDocName(e.target.value)} placeholder="Dr(a). Nome Sobrenome" disabled={locked} />
           <label style={lbl}>CRM</label>
-          <input style={inp} value={crm} onChange={(e) => setCrm(e.target.value)} placeholder="000000" />
+          <input style={{ ...inp, background: locked ? "#F4F5F4" : "#fff" }} value={crm} onChange={(e) => setCrm(e.target.value)} placeholder="000000" disabled={locked} />
+        </div>
+      </section>
+
+      <section style={{ ...panel, marginBottom: 18 }}>
+        <div style={ph}><b>Profissão, especialidades e RQE</b></div>
+        <div style={{ padding: 18 }}>
+          <SpecialtiesManager specialties={specialties} locked={locked} />
         </div>
       </section>
 

@@ -94,3 +94,13 @@ export async function deleteMedication(formData: FormData) {
   await supabase.from("medications").delete().eq("id", medId);
   revalidatePath(`/medico/paciente/${patientId}`);
 }
+
+export async function editPatientInfo(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const patientId = String(formData.get("patientId"));
+  const full_name = String(formData.get("full_name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  if (full_name) await supabase.from("profiles").update({ full_name }).eq("id", patientId);
+  if (phone) await supabase.from("patients").update({ phone }).eq("id", patientId);
+  revalidatePath(`/medico/paciente/${patientId}`);
+}
