@@ -1,4 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase-server";
+import PrescribeForm from "./PrescribeForm";
+import { applyProtocol, pauseMedication, deleteMedication } from "./actions";
+
+const PROTOCOLS = ["Depressão", "Transtorno bipolar", "Ansiedade", "TDAH", "Personalizado"];
 
 export default async function FichaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -6,9 +10,16 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
 
   const { data: patient } = await supabase
     .from("patients")
-    .select("diagnosis_label, profiles(full_name), medications(name, source, dose), checkins(day, mood, energy, sleep_hours, side_effects, free_note)")
+    .select("diagnosis_label, profiles(full_name), checkins(day, mood, energy, sleep_hours, side_effects, free_note)")
     .eq("id", id)
     .single();
+
+  // medicamentos (prescritos e auto-incluídos) com tudo p/ gerenciar
+  const { data: meds } = await supabase
+    .from("medications")
+    .select("id, name, dose, form, times, frequency, source, active, channel")
+    .eq("patient_id", id)
+    .order("source");
 
   const { data: adh } = await supabase.rpc("adherence_rate", { p_patient: id, p_days: 30 });
 
@@ -30,7 +41,10 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p: any = patient;
   const first = p?.profiles?.full_name?.split(" ")[0] ?? "Paciente";
-  const selfMeds = (p?.medications ?? []).filter((m: any) => m.source === "patient");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selfMeds = (meds ?? []).filter((m: any) => m.source === "patient");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const docMeds = (meds ?? []).filter((m: any) => m.source === "doctor");
   const checkins = (p?.checkins ?? []).slice(-7);
 
   return (
@@ -60,6 +74,56 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
         <Kpi n={String(checkins.length)} l="Check-ins 7d" />
         <Kpi n={String(selfMeds.length)} l="Auto-incluídos" />
       </div>
+
+      {/* PROTOCOLO POR DIAGNÓSTICO */}
+      <section style={{ ...panel, marginBottom: 18 }}>
+        <div style={ph}><b>Protocolo / diagnóstico</b></div>
+        <div style={{ padding: 16, display: "flex", gap: 9, flexWrap: "wrap" }}>
+          {PROTOCOLS.map((proto) => (
+            <form key={proto} action={applyProtocol}>
+              <input type="hidden" name="patientId" value={id} />
+              <input type="hidden" name="protocol" value={proto} />
+              <button style={{ ...protoChip, ...(p?.diagnosis_label === proto ? protoOn : {}) }}>{proto}</button>
+            </form>
+          ))}
+        </div>
+        <p style={{ padding: "0 16px 14px", fontSize: 12.5, color: "#646B67" }}>
+          Define quais módulos de check-in o paciente verá (humor, energia, sono, atividade…).
+        </p>
+      </section>
+
+      {/* PRESCRIÇÕES (gerenciáveis) */}
+      <section style={{ ...panel, marginBottom: 18 }}>
+        <div style={ph}><b>Medicamentos prescritos</b></div>
+        <div style={{ padding: 16 }}>
+          {docMeds.length === 0 && <p style={{ fontSize: 13.5, color: "#646B67", marginBottom: 14 }}>Nenhuma prescrição ainda. Prescreva abaixo — as doses são geradas automaticamente.</p>}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {docMeds.map((m: any) => (
+            <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid #E7E9E7" }}>
+              <span style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>💊</span>
+              <div style={{ flex: 1 }}>
+                <b style={{ fontSize: 14, opacity: m.active ? 1 : 0.5 }}>{m.name} {m.dose}</b>
+                <div style={{ fontSize: 12.5, color: "#646B67" }}>{(m.times ?? []).join(" e ")} · {fmtFreq(m.frequency)} · {m.channel === "whatsapp" ? "WhatsApp" : "Notificação"}</div>
+              </div>
+              {!m.active && <span style={badgeY}>Pausado</span>}
+              <form action={pauseMedication}>
+                <input type="hidden" name="medId" value={m.id} />
+                <input type="hidden" name="patientId" value={id} />
+                <input type="hidden" name="active" value={String(m.active)} />
+                <button style={miniBtn}>{m.active ? "Pausar" : "Reativar"}</button>
+              </form>
+              <form action={deleteMedication}>
+                <input type="hidden" name="medId" value={m.id} />
+                <input type="hidden" name="patientId" value={id} />
+                <button style={{ ...miniBtn, color: "#D2554C" }}>Excluir</button>
+              </form>
+            </div>
+          ))}
+          <div style={{ marginTop: 16 }}>
+            <PrescribeForm patientId={id} />
+          </div>
+        </div>
+      </section>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
         {/* doses recentes */}
@@ -125,3 +189,10 @@ const ph: React.CSSProperties = { padding: "15px 19px", borderBottom: "1px solid
 const badgeRisk: React.CSSProperties = { background: "#FBE6E4", color: "#A8392F", padding: "7px 13px", borderRadius: 20, fontWeight: 700, fontSize: 13 };
 const badgeY: React.CSSProperties = { background: "#FAF0DA", color: "#8A6212", padding: "3px 9px", borderRadius: 20, fontWeight: 700, fontSize: 11 };
 const noteRisk: React.CSSProperties = { background: "#FBE6E4", color: "#A8392F", borderRadius: 13, padding: "13px 16px", fontSize: 13.5, marginBottom: 18, lineHeight: 1.5 };
+const protoChip: React.CSSProperties = { padding: "9px 14px", borderRadius: 11, border: "1.5px solid #E7E9E7", background: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" };
+const protoOn: React.CSSProperties = { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--accent-ink)" };
+const miniBtn: React.CSSProperties = { background: "transparent", border: "1px solid #E7E9E7", borderRadius: 9, padding: "7px 12px", fontSize: 12.5, fontWeight: 600, color: "#646B67", cursor: "pointer" };
+
+function fmtFreq(f: string) {
+  return ({ daily: "diário", alternate: "dias alternados", weekly: "semanal", as_needed: "quando precisar" } as Record<string, string>)[f] ?? f;
+}
