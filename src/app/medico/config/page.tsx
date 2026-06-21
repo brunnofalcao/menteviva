@@ -33,7 +33,7 @@ export default async function ConfigPage({ searchParams }: { searchParams: Promi
   const groups = ["Núcleo clínico", "Comportamental (manual)"];
 
   return (
-    <main style={{ padding: "26px 32px", maxWidth: 760 }}>
+    <main className="mv-page" style={{ maxWidth: 760 }}>
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>
         Lembretes & módulos › {curPatient?.profiles?.full_name ?? "Paciente"}
       </div>

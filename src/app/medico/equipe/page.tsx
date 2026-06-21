@@ -29,9 +29,9 @@ export default async function EquipePage() {
     .order("created_at");
 
   return (
-    <div style={{ padding: "26px 32px 60px", maxWidth: 920 }}>
+    <div className="mv-page" style={{ maxWidth: 920 }}>
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Equipe & permissões</div>
-      <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Sua equipe</h1>
+      <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Sua equipe</h1>
       <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>
         Cadastre quem opera o painel e defina o que cada pessoa vê e faz. A pessoa cria a senha no primeiro acesso em <b>/primeiro-acesso</b> usando o e-mail que você cadastrar — sem precisar de e-mail de convite.
       </p>
@@ -50,7 +50,7 @@ export default async function EquipePage() {
           <div style={{ fontSize: 12, fontWeight: 700, color: "#646B67", textTransform: "uppercase", letterSpacing: ".05em", margin: "6px 0 10px" }}>
             Permissões deste membro
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div className="mv-row2-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {PERMS.map((p) => (
               <label key={p.cat} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: "1px solid #E7E9E7", borderRadius: 11, cursor: "pointer", background: p.sensitive ? "#FEF8F2" : "#fff" }}>
                 <input type="checkbox" name="perm" value={p.cat} defaultChecked={p.cat === "view_adherence"} style={{ width: 17, height: 17, accentColor: "var(--accent)" }} />

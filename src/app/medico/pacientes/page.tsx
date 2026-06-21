@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import Link from "next/link";
+import NewPatientForm from "./NewPatientForm";
 
 export default async function PacientesPage() {
   const supabase = await createServerSupabase();
@@ -8,6 +9,11 @@ export default async function PacientesPage() {
 
   const { data: patients } = await supabase
     .from("patients").select("id, diagnosis_label, profiles(full_name)");
+
+  // pré-cadastrados que ainda não acessaram
+  const { data: invites } = await supabase.rpc("list_patient_invites");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pending = (invites ?? []).filter((i: any) => !i.activated);
 
   const rows = await Promise.all((patients ?? []).map(async (p) => {
     const { data: adh } = await supabase.rpc("adherence_rate", { p_patient: p.id, p_days: 30 });
@@ -22,10 +28,27 @@ export default async function PacientesPage() {
   const moodEmoji = (m: number | null) => m ? ["😣", "😔", "😐", "🙂", "😄"][m - 1] : "—";
 
   return (
-    <div style={{ padding: "26px 32px 60px", maxWidth: 1000 }}>
+    <div className="mv-page">
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Pacientes</div>
-      <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Pacientes</h1>
-      <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>{rows.length} ativo(s) · ordenados por adesão</p>
+      <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Pacientes</h1>
+      <p style={{ color: "#646B67", fontSize: 14, marginBottom: 18 }}>
+        {rows.length} ativo(s){pending.length ? ` · ${pending.length} aguardando 1º acesso` : ""}
+      </p>
+
+      <NewPatientForm />
+
+      {pending.length > 0 && (
+        <div style={{ background: "#FFFBF2", border: "1px solid #F0E4C8", borderRadius: 14, padding: "14px 18px", marginBottom: 18 }}>
+          <b style={{ fontSize: 13.5, color: "#8A6212" }}>Aguardando primeiro acesso</b>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {pending.map((i: any) => (
+            <div key={i.cpf} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, padding: "6px 0", color: "#7A5413" }}>
+              <span><b>{i.full_name}</b> · CPF {i.cpf}</span>
+              <span>senha: telefone {i.phone}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ background: "#fff", border: "1px solid #E7E9E7", borderRadius: 18, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -35,7 +58,7 @@ export default async function PacientesPage() {
               <tr key={r.id}>
                 <td style={td}>
                   <Link href={`/medico/paciente/${r.id}`} style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none", color: "inherit" }}>
-                    <span style={{ ...avatar, background: r.adh < 60 ? "#FBE6E4" : "var(--accent)", color: r.adh < 60 ? "#A8392F" : "#fff" }}>
+                    <span style={{ ...avatar, background: r.adh < 60 ? "#FBF0E3" : "var(--accent)", color: r.adh < 60 ? "#9A6320" : "#fff" }}>
                       {r.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()}
                     </span>
                     <b style={{ fontSize: 14 }}>{r.name}</b>
@@ -44,7 +67,7 @@ export default async function PacientesPage() {
                 <td style={{ ...td, color: "#646B67" }}>{r.diag ?? "—"}</td>
                 <td style={td}>
                   <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                    <div style={bar}><i style={{ display: "block", height: "100%", borderRadius: 5, width: `${r.adh}%`, background: r.adh < 60 ? "#D2554C" : r.adh < 80 ? "#C8902F" : "#2FA37C" }} /></div>
+                    <div style={bar}><i style={{ display: "block", height: "100%", borderRadius: 5, width: `${r.adh}%`, background: r.adh < 60 ? "#D4A24A" : r.adh < 80 ? "#D4A24A" : "#43A57C" }} /></div>
                     <span style={{ fontSize: 12.5, color: "#646B67" }}>{r.adh}%</span>
                   </div>
                 </td>

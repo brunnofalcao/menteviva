@@ -38,12 +38,12 @@ export default function MarcaPage() {
   }
 
   return (
-    <div style={{ padding: "26px 32px 60px", maxWidth: 820 }}>
+    <div className="mv-page" style={{ maxWidth: 820 }}>
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Marca & whitelabel</div>
-      <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Sua marca</h1>
+      <h1 className="mv-title" style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 4px" }}>Sua marca</h1>
       <p style={{ color: "#646B67", fontSize: 14, marginBottom: 22 }}>O app do paciente assume a identidade da sua clínica.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18 }}>
+      <div className="mv-split-2">
         <section style={panel}>
           <div style={ph}><b>Identidade</b></div>
           <div style={{ padding: 19 }}>

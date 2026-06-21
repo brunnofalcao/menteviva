@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import PrescribeForm from "./PrescribeForm";
 import { applyProtocol, pauseMedication, deleteMedication } from "./actions";
+import { medVisual, medSubtitle } from "@/lib/med-visual";
 
 const PROTOCOLS = ["Depressão", "Transtorno bipolar", "Ansiedade", "TDAH", "Personalizado"];
 
@@ -48,11 +49,11 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
   const checkins = (p?.checkins ?? []).slice(-7);
 
   return (
-    <main style={{ padding: "26px 32px", maxWidth: 900 }}>
+    <main className="mv-page" style={{ maxWidth: 900 }}>
       <div style={{ fontSize: 12.5, color: "#9BA29D", fontWeight: 600 }}>Pacientes › {p?.profiles?.full_name}</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, margin: "6px 0 20px" }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700 }}>{p?.profiles?.full_name}</h1>
+          <h1 className="mv-title" style={{ fontSize: 28, fontWeight: 700 }}>{p?.profiles?.full_name}</h1>
           <p style={{ color: "#646B67", fontSize: 14 }}>{p?.diagnosis_label ?? "Sem protocolo definido"}</p>
         </div>
         {atRisk && <span style={badgeRisk}>⚠ Em risco de abandono</span>}
@@ -68,7 +69,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
       )}
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+      <div className="mv-kpis" style={{ marginBottom: 20 }}>
         <Kpi n={`${Number(adh ?? 0)}%`} l="Adesão 30 dias" bad={Number(adh ?? 0) < 60} />
         <Kpi n={String(missed7)} l="Faltas 7 dias" bad={missed7 >= 3} />
         <Kpi n={String(checkins.length)} l="Check-ins 7d" />
@@ -98,9 +99,11 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
         <div style={{ padding: 16 }}>
           {docMeds.length === 0 && <p style={{ fontSize: 13.5, color: "#646B67", marginBottom: 14 }}>Nenhuma prescrição ainda. Prescreva abaixo — as doses são geradas automaticamente.</p>}
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {docMeds.map((m: any) => (
+          {docMeds.map((m: any) => {
+            const v = medVisual(m.name, m.form);
+            return (
             <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid #E7E9E7" }}>
-              <span style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>💊</span>
+              <span style={{ width: 38, height: 38, borderRadius: 11, background: v.color.bg, color: v.color.ink, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{v.shape}</span>
               <div style={{ flex: 1 }}>
                 <b style={{ fontSize: 14, opacity: m.active ? 1 : 0.5 }}>{m.name} {m.dose}</b>
                 <div style={{ fontSize: 12.5, color: "#646B67" }}>{(m.times ?? []).join(" e ")} · {fmtFreq(m.frequency)} · {m.channel === "whatsapp" ? "WhatsApp" : "Notificação"}</div>
@@ -115,17 +118,17 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
               <form action={deleteMedication}>
                 <input type="hidden" name="medId" value={m.id} />
                 <input type="hidden" name="patientId" value={id} />
-                <button style={{ ...miniBtn, color: "#D2554C" }}>Excluir</button>
+                <button style={{ ...miniBtn, color: "#B5793A" }}>Excluir</button>
               </form>
             </div>
-          ))}
+          ); })}
           <div style={{ marginTop: 16 }}>
             <PrescribeForm patientId={id} />
           </div>
         </div>
       </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
+      <div className="mv-split">
         {/* doses recentes */}
         <section style={panel}>
           <div style={ph}><b>Doses recentes</b></div>
@@ -133,7 +136,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
             {(doses ?? []).slice(0, 8).map((d, i) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const med: any = d.medications;
-              const color = d.status === "taken" ? "#2FA37C" : d.status === "skipped" ? "#D2554C" : "#C8902F";
+              const color = d.status === "taken" ? "#43A57C" : d.status === "skipped" ? "#B5793A" : "#D4A24A";
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 19px", borderBottom: "1px solid #E7E9E7" }}>
                   <span style={{ width: 8, height: 8, borderRadius: 4, background: color }} />
@@ -178,7 +181,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
 function Kpi({ n, l, bad }: { n: string; l: string; bad?: boolean }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #E7E9E7", borderRadius: 16, padding: 16 }}>
-      <div style={{ fontSize: 30, fontWeight: 700, color: bad ? "#D2554C" : "#1A1D1C" }}>{n}</div>
+      <div style={{ fontSize: 30, fontWeight: 700, color: bad ? "#B5793A" : "#1A1D1C" }}>{n}</div>
       <div style={{ fontSize: 12.5, color: "#646B67", marginTop: 6, fontWeight: 600 }}>{l}</div>
     </div>
   );
@@ -186,9 +189,9 @@ function Kpi({ n, l, bad }: { n: string; l: string; bad?: boolean }) {
 
 const panel: React.CSSProperties = { background: "#fff", border: "1px solid #E7E9E7", borderRadius: 18, overflow: "hidden" };
 const ph: React.CSSProperties = { padding: "15px 19px", borderBottom: "1px solid #E7E9E7", fontSize: 15 };
-const badgeRisk: React.CSSProperties = { background: "#FBE6E4", color: "#A8392F", padding: "7px 13px", borderRadius: 20, fontWeight: 700, fontSize: 13 };
+const badgeRisk: React.CSSProperties = { background: "#FBF0E3", color: "#9A6320", padding: "7px 13px", borderRadius: 20, fontWeight: 700, fontSize: 13 };
 const badgeY: React.CSSProperties = { background: "#FAF0DA", color: "#8A6212", padding: "3px 9px", borderRadius: 20, fontWeight: 700, fontSize: 11 };
-const noteRisk: React.CSSProperties = { background: "#FBE6E4", color: "#A8392F", borderRadius: 13, padding: "13px 16px", fontSize: 13.5, marginBottom: 18, lineHeight: 1.5 };
+const noteRisk: React.CSSProperties = { background: "#FBF0E3", color: "#9A6320", borderRadius: 13, padding: "13px 16px", fontSize: 13.5, marginBottom: 18, lineHeight: 1.5 };
 const protoChip: React.CSSProperties = { padding: "9px 14px", borderRadius: 11, border: "1.5px solid #E7E9E7", background: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" };
 const protoOn: React.CSSProperties = { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--accent-ink)" };
 const miniBtn: React.CSSProperties = { background: "transparent", border: "1px solid #E7E9E7", borderRadius: 9, padding: "7px 12px", fontSize: 12.5, fontWeight: 600, color: "#646B67", cursor: "pointer" };
