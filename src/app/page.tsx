@@ -8,13 +8,12 @@ export default function Home() {
       <p style={{ color: "var(--label-2)", margin: "12px 0 30px", fontSize: 16 }}>
         Seu tratamento, organizado junto com quem cuida de você.
       </p>
-      <Link href="/login" style={{ background: "var(--accent)", color: "#fff", borderRadius: 15, padding: "15px 28px", fontWeight: 700, fontSize: 16, textDecoration: "none", width: "100%", maxWidth: 320 }}>
-        Entrar
+      <Link href="/acesso" style={{ background: "var(--accent)", color: "#fff", borderRadius: 15, padding: "15px 28px", fontWeight: 700, fontSize: 16, textDecoration: "none", width: "100%", maxWidth: 320 }}>
+        Entrar como paciente
       </Link>
-      <div style={{ display: "flex", gap: 16, marginTop: 18 }}>
-        <Link href="/onboarding" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none", fontSize: 14 }}>Sou paciente</Link>
-        <Link href="/primeiro-acesso" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none", fontSize: 14 }}>Sou da equipe</Link>
-      </div>
+      <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none", fontSize: 14, marginTop: 14 }}>
+        Sou médico ou equipe
+      </Link>
     </main>
   );
 }

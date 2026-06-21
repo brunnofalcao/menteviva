@@ -33,7 +33,7 @@ export default async function JornadaPage() {
   const moods = (checkins ?? []).reverse();
   const activeDays = moods.filter((c) => c.activity && c.activity !== "still").length;
 
-  const color = (c: string) => ({ f: "#2FA37C", p: "#C8902F", m: "#D2554C", none: "#E4E3EA" }[c]!);
+  const color = (c: string) => ({ f: "#43A57C", p: "#D4A24A", m: "#C2C6CB", none: "#EEF0F2" }[c]!);
 
   return (
     <main style={{ maxWidth: 440, margin: "0 auto", padding: "16px 16px 96px" }}>
@@ -42,14 +42,16 @@ export default async function JornadaPage() {
       <div style={{ ...card, textAlign: "center" }}>
         <div style={eyebrow}>Adesão · últimos 30 dias</div>
         <div style={{ fontSize: 46, fontWeight: 800, color: "var(--accent)", lineHeight: 1 }}>{Number(adh ?? 0)}%</div>
-        {Number(adh ?? 0) >= 80 && <span style={badge}>✓ Acima da média</span>}
+        {Number(adh ?? 0) >= 80 && <span style={badge}>No seu ritmo</span>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: 14 }}>
           {days.map((d, i) => (
             <div key={i} style={{ aspectRatio: "1", borderRadius: 8, background: color(d.cls), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600, color: d.cls === "none" ? "#A4A8B2" : "#fff" }}>{d.n}</div>
           ))}
         </div>
         <div style={{ display: "flex", gap: 13, justifyContent: "center", fontSize: 11, color: "var(--label-2)", fontWeight: 600, marginTop: 10 }}>
-          <span>🟢 Completo</span><span>🟡 Parcial</span><span>🔴 Faltou</span>
+          <span><i style={{ display: "inline-block", width: 9, height: 9, borderRadius: 3, background: "#43A57C", marginRight: 4 }} />Completo</span>
+          <span><i style={{ display: "inline-block", width: 9, height: 9, borderRadius: 3, background: "#D4A24A", marginRight: 4 }} />Parcial</span>
+          <span><i style={{ display: "inline-block", width: 9, height: 9, borderRadius: 3, background: "#C2C6CB", marginRight: 4 }} />Sem registro</span>
         </div>
       </div>
 

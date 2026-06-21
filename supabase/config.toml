@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.patient-access]
+verify_jwt = false

@@ -12,7 +12,7 @@ const REASONS: { v: SkipReason; label: string; hint: string }[] = [
   { v: "other", label: "Outro motivo", hint: "" },
 ];
 
-export default function ConfirmDose({ dose }: { dose: { id: string; name: string; dose: string | null; detail?: string } }) {
+export default function ConfirmDose({ dose }: { dose: { id: string; name: string; dose: string | null; detail?: string; shape?: string; colorBg?: string; colorInk?: string } }) {
   const router = useRouter();
   const supabase = createClient();
   const [phase, setPhase] = useState<"main" | "skip" | "done">("main");
@@ -53,15 +53,15 @@ export default function ConfirmDose({ dose }: { dose: { id: string; name: string
         {phase === "main" ? (
           <>
             <div style={{ textAlign: "center", padding: "18px 0 4px" }}>
-              <div style={bigpill}>💊</div>
+              <div style={{ ...bigpill, background: dose.colorBg ?? "var(--accent-soft)", color: dose.colorInk ?? "inherit" }}>{dose.shape ?? "💊"}</div>
               <div style={{ fontSize: 23, fontWeight: 800, letterSpacing: "-.02em" }}>{dose.name}</div>
               <p style={{ color: "var(--label-2)", fontSize: 14, margin: "6px 0 10px" }}>{dose.detail ?? dose.dose}</p>
-              <span style={badge}>✓ No horário</span>
+              <span style={badge}>No horário</span>
             </div>
-            <button style={btn} onClick={take} disabled={busy}>✓ Tomei agora</button>
+            <button style={btn} onClick={take} disabled={busy}>Registrar que tomei</button>
             <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-              <button style={{ ...btn, background: "var(--accent-soft)", color: "var(--accent-ink)" }} onClick={snooze} disabled={busy}>Adiar 30 min</button>
-              <button style={{ ...btn, background: "var(--card)", color: "var(--bad)" }} onClick={() => setPhase("skip")} disabled={busy}>Pulei hoje</button>
+              <button style={{ ...btn, background: "var(--accent-soft)", color: "var(--accent-ink)" }} onClick={snooze} disabled={busy}>Lembrar em 30 min</button>
+              <button style={{ ...btn, background: "var(--card)", color: "var(--label-2)" }} onClick={() => setPhase("skip")} disabled={busy}>Não tomei</button>
             </div>
             <p style={{ textAlign: "center", color: "#A4A8B2", fontSize: 12.5, marginTop: 16 }}>
               Seu registro ajuda seu médico. Sem julgamento — só cuidado.
@@ -69,7 +69,7 @@ export default function ConfirmDose({ dose }: { dose: { id: string; name: string
           </>
         ) : (
           <>
-            <div style={{ fontSize: 19, fontWeight: 800, padding: "8px 4px 4px" }}>Por que você pulou?</div>
+            <div style={{ fontSize: 19, fontWeight: 800, padding: "8px 4px 4px" }}>O que aconteceu desta vez?</div>
             <p style={{ color: "var(--label-2)", fontSize: 13.5, padding: "0 4px 14px" }}>Isso ajuda seu médico a entender — sem cobrança.</p>
             {REASONS.map((r) => (
               <button key={r.v} style={reasonBtn} onClick={() => skip(r.v)} disabled={busy}>
