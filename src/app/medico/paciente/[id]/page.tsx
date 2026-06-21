@@ -1,8 +1,26 @@
 import { createServerSupabase } from "@/lib/supabase-server";
 import PrescribeForm from "./PrescribeForm";
 import EditMedForm from "./EditMedForm";
+import AddSupportForm from "./AddSupportForm";
+import EventForm from "./EventForm";
+import PreConsultAI from "./PreConsultAI";
 import { applyProtocol, pauseMedication, deleteMedication } from "./actions";
+import { removeSupportMember } from "./support-actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
+
+const REL_LABEL: Record<string, string> = {
+  son: "Filho", daughter: "Filha", father: "Pai", mother: "Mãe", spouse: "Cônjuge",
+  partner: "Companheiro(a)", brother: "Irmão", sister: "Irmã", grandchild: "Neto(a)",
+  caregiver: "Cuidador(a)", nurse: "Enfermeiro(a)", other: "Familiar",
+};
+const EVENT_LABEL: Record<string, string> = {
+  fall: "Queda", dizziness: "Tontura", confusion: "Confusão", anxiety_crisis: "Crise de ansiedade",
+  panic_attack: "Ataque de pânico", mood_change: "Mudança de humor", hallucination: "Alucinação",
+  insomnia: "Insônia", pain: "Dor", appetite_loss: "Perda de apetite", excessive_sleepiness: "Sonolência",
+  medication_refused: "Recusou medicação", medication_forgotten: "Esqueceu medicação",
+  medication_unavailable: "Medicação em falta", emergency_visit: "Pronto-socorro", hospitalization: "Internação",
+  observation: "Observação",
+};
 
 const PROTOCOLS = ["Depressão", "Transtorno bipolar", "Ansiedade", "TDAH", "Personalizado"];
 
@@ -22,6 +40,37 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
     .select("id, name, dose, form, times, frequency, source, active, channel, ends_at")
     .eq("patient_id", id)
     .order("source");
+
+  // rede de apoio
+  const { data: support } = await supabase
+    .from("support_network")
+    .select("id, full_name, relationship, phone, is_caregiver, is_nurse")
+    .eq("patient_id", id);
+
+  // eventos recentes
+  const { data: events } = await supabase
+    .from("patient_events")
+    .select("id, type, category, severity, note, occurred_at, reporter_role")
+    .eq("patient_id", id)
+    .order("occurred_at", { ascending: false })
+    .limit(8);
+
+  // timeline longitudinal
+  const { data: timeline } = await supabase
+    .rpc("patient_timeline", { p_patient: id, p_limit: 20 });
+
+  // detecção precoce de sinais de alerta
+  const { data: warnings } = await supabase
+    .rpc("early_warnings", { p_patient: id });
+
+  // especialidade do médico (geriatria mostra polifarmácia)
+  const { data: { user: docUser } } = await supabase.auth.getUser();
+  const { data: docInfo } = await supabase
+    .from("doctors").select("specialty").eq("id", docUser?.id ?? "").single();
+  const isGeriatrics = docInfo?.specialty === "geriatrics";
+  const { data: poly } = isGeriatrics
+    ? await supabase.rpc("polypharmacy_review", { p_patient: id })
+    : { data: null };
 
   const { data: adh } = await supabase.rpc("adherence_rate", { p_patient: id, p_days: 30 });
 
@@ -57,7 +106,10 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
           <h1 className="mv-title" style={{ fontSize: 28, fontWeight: 700 }}>{p?.profiles?.full_name}</h1>
           <p style={{ color: "#646B67", fontSize: 14 }}>{p?.diagnosis_label ?? "Sem protocolo definido"}</p>
         </div>
-        {atRisk && <span style={badgeRisk}>⚠ Em risco de abandono</span>}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {atRisk && <span style={badgeRisk}>⚠ Em risco de abandono</span>}
+          <a href={`/medico/paciente/${id}/relatorio`} style={{ padding: "9px 15px", borderRadius: 10, background: "#fff", border: "1px solid #E7E9E7", fontSize: 13.5, fontWeight: 600, color: "#1A1D1C", textDecoration: "none" }}>📄 Gerar relatório</a>
+        </div>
       </div>
 
       {atRisk && (
@@ -66,6 +118,34 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
           {missed7 >= 3 && `Faltou ${missed7} doses nos últimos 7 dias. `}
           {ranOut && `"Acabou o remédio" registrado — possível abandono por acesso, não por vontade. `}
           Considere contato.
+        </div>
+      )}
+
+      {/* ════ DETECÇÃO PRECOCE ════ */}
+      {(warnings ?? []).length > 0 && (
+        <div style={{ background: "#FFFBF2", border: "1px solid #EAD9B8", borderRadius: 16, padding: "14px 16px", marginBottom: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#8A6212", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 10 }}>⚑ Sinais de alerta</div>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {(warnings ?? []).map((w: any, i: number) => (
+            <div key={i} style={{ display: "flex", gap: 10, padding: "7px 0", borderTop: i ? "1px solid #F0E6D0" : "none" }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0, background: w.severity === "high" ? "#C0853B" : "#D4A24A" }} />
+              <div>
+                <b style={{ fontSize: 13.5, color: "#6B4E1A" }}>{w.label}</b>
+                {w.detail && <p style={{ fontSize: 12.5, color: "#8A6212" }}>{w.detail}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ════ POLIFARMÁCIA (geriatria) ════ */}
+      {isGeriatrics && poly && poly[0] && (
+        <div style={{ background: poly[0].is_polypharmacy ? "#FFFBF2" : "#F4F7F5", border: `1px solid ${poly[0].is_polypharmacy ? "#EAD9B8" : "#DDE5E0"}`, borderRadius: 16, padding: "14px 16px", marginBottom: 18, display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ fontSize: 30, fontWeight: 800, color: poly[0].is_polypharmacy ? "#B5793A" : "#2C7A56" }}>{poly[0].total_meds}</div>
+          <div>
+            <b style={{ fontSize: 14, color: poly[0].is_polypharmacy ? "#8A6212" : "#2C7A56" }}>{poly[0].label}</b>
+            <p style={{ fontSize: 12.5, color: "#646B67" }}>{poly[0].detail}</p>
+          </div>
         </div>
       )}
 
@@ -93,6 +173,9 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
           Define quais módulos de check-in o paciente verá (humor, energia, sono, atividade…).
         </p>
       </section>
+
+      {/* RESUMO IA PRÉ-CONSULTA */}
+      <PreConsultAI patientId={id} />
 
       {/* PRESCRIÇÕES (gerenciáveis) */}
       <section style={{ ...panel, marginBottom: 18 }}>
@@ -171,6 +254,79 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
                 {c.mood ? `humor ${c.mood}/5` : ""} {c.sleep_hours ? `· ${c.sleep_hours}h sono` : ""}
                 {c.side_effects?.length ? <span style={{ color: "#C8902F" }}> · {c.side_effects.join(", ")}</span> : ""}
                 {c.free_note ? <div style={{ color: "#646B67", fontStyle: "italic" }}>"{c.free_note}"</div> : ""}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ════ REDE DE APOIO ════ */}
+      <section style={{ ...panel, marginTop: 18 }}>
+        <div style={ph}><b>Rede de apoio</b></div>
+        <div style={{ padding: 16 }}>
+          {(support ?? []).length === 0 && <p style={{ fontSize: 13.5, color: "#646B67", marginBottom: 14 }}>Ninguém na rede ainda. Adicione familiares, cuidadores ou enfermeiros para acompanhar o tratamento.</p>}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {(support ?? []).map((s: any) => (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid #F0F1F0" }}>
+              <span style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--accent-soft, #EEF3F1)", color: "var(--accent-ink, #2C6BBF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
+                {s.full_name.split(" ").map((x: string) => x[0]).slice(0, 2).join("").toUpperCase()}
+              </span>
+              <div style={{ flex: 1 }}>
+                <b style={{ fontSize: 14 }}>{s.full_name}</b>
+                <div style={{ fontSize: 12.5, color: "#646B67" }}>
+                  {REL_LABEL[s.relationship] ?? "Familiar"}
+                  {s.is_caregiver && " · Cuidador"}{s.is_nurse && " · Enfermeiro"}
+                  {s.phone ? ` · ${s.phone}` : ""}
+                </div>
+              </div>
+              <form action={removeSupportMember}>
+                <input type="hidden" name="memberId" value={s.id} />
+                <input type="hidden" name="patientId" value={id} />
+                <button style={miniBtn}>Remover</button>
+              </form>
+            </div>
+          ))}
+          <div style={{ marginTop: 14 }}><AddSupportForm patientId={id} /></div>
+        </div>
+      </section>
+
+      {/* ════ EVENTOS + TIMELINE ════ */}
+      <div className="mv-split" style={{ marginTop: 18 }}>
+        <section style={panel}>
+          <div style={ph}><b>Eventos recentes</b></div>
+          <div style={{ padding: 16 }}>
+            {(events ?? []).length === 0 && <p style={{ fontSize: 13.5, color: "#646B67", marginBottom: 12 }}>Nenhum evento registrado.</p>}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {(events ?? []).map((e: any) => (
+              <div key={e.id} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid #F0F1F0" }}>
+                <span style={{ width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0, background: e.severity === "high" ? "#C0853B" : e.severity === "medium" ? "#D4A24A" : "#9AA0A6" }} />
+                <div style={{ flex: 1 }}>
+                  <b style={{ fontSize: 13.5 }}>{EVENT_LABEL[e.type] ?? e.type}</b>
+                  {e.note && <p style={{ fontSize: 12.5, color: "#646B67" }}>{e.note}</p>}
+                  <small style={{ fontSize: 11.5, color: "#9BA29D" }}>{new Date(e.occurred_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</small>
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: 14 }}><EventForm patientId={id} /></div>
+          </div>
+        </section>
+
+        <section style={panel}>
+          <div style={ph}><b>Linha do tempo</b></div>
+          <div style={{ padding: "8px 16px 16px" }}>
+            {(timeline ?? []).length === 0 && <p style={{ fontSize: 13.5, color: "#646B67", padding: "8px 0" }}>O histórico do paciente aparecerá aqui conforme o tratamento avança.</p>}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {(timeline ?? []).map((t: any, i: number) => (
+              <div key={i} style={{ display: "flex", gap: 11, padding: "9px 0" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 5, background: t.kind === "event" ? "#C0853B" : t.kind === "medication" ? "var(--accent)" : "#9AA0A6" }} />
+                  <span style={{ width: 1.5, flex: 1, background: "#E7E9E7", marginTop: 3 }} />
+                </div>
+                <div style={{ flex: 1, paddingBottom: 4 }}>
+                  <b style={{ fontSize: 13 }}>{t.kind === "medication" ? `Iniciou ${t.label}` : t.kind === "event" ? (EVENT_LABEL[t.label] ?? t.label) : t.label}</b>
+                  {t.detail && <span style={{ fontSize: 12.5, color: "#646B67" }}> · {t.detail}</span>}
+                  <small style={{ display: "block", fontSize: 11.5, color: "#9BA29D" }}>{t.at ? new Date(t.at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : ""}</small>
+                </div>
               </div>
             ))}
           </div>

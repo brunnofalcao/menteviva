@@ -8,7 +8,7 @@ export type SkipReason = "forgot" | "side_effect" | "ran_out" | "felt_better" | 
 export type ReminderKind = "medication" | "water" | "mood_checkin" | "breathing" | "care_message";
 export type ReminderChannel = "push" | "whatsapp";
 export type CheckinModule =
-  | "mood" | "sleep" | "side_effects" | "energy" | "activity" | "hydration" | "free_note";
+  | "mood" | "sleep" | "side_effects" | "energy" | "activity" | "hydration" | "free_note" | "anxiety" | "appetite" | "irritability";
 export type ActivityLevel = "still" | "moved" | "exercised";
 
 export interface Doctor {
@@ -60,6 +60,9 @@ export interface Checkin {
   day: string;
   mood: number | null;
   energy: number | null;
+  anxiety: number | null;
+  appetite: number | null;
+  irritability: number | null;
   sleep_hours: number | null;
   activity: ActivityLevel | null;
   side_effects: string[];

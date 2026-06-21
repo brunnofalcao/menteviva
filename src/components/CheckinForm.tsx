@@ -12,7 +12,9 @@ export default function CheckinForm({ enabled, existing }: { enabled: string[]; 
   const has = (m: string) => enabled.includes(m);
 
   const [mood, setMood] = useState<number>(existing?.mood ?? 0);
+  const [anxiety, setAnxiety] = useState<number>(existing?.anxiety ?? 0);
   const [energy, setEnergy] = useState<number>(existing?.energy ?? 0);
+  const [appetite, setAppetite] = useState<number>(existing?.appetite ?? 0);
   const [sleep, setSleep] = useState<number>(existing?.sleep_hours ?? 7);
   const [activity, setActivity] = useState<ActivityLevel | null>(existing?.activity ?? null);
   const [water, setWater] = useState<number>(existing?.water_count ?? 0);
@@ -30,7 +32,9 @@ export default function CheckinForm({ enabled, existing }: { enabled: string[]; 
       patient_id: user.id,
       day: new Date().toISOString().slice(0, 10),
       mood: has("mood") ? mood || null : null,
+      anxiety: has("anxiety") ? anxiety || null : null,
       energy: has("energy") ? energy || null : null,
+      appetite: has("appetite") ? appetite || null : null,
       sleep_hours: has("sleep") ? sleep : null,
       activity: has("activity") ? activity : null,
       water_count: has("hydration") ? water : 0,
@@ -60,10 +64,22 @@ export default function CheckinForm({ enabled, existing }: { enabled: string[]; 
           <Faces options={["😣", "😔", "😐", "🙂", "😄"]} value={mood} onChange={setMood} />
         </Card>
       )}
+      {has("anxiety") && (
+        <Card title="Seu nível de ansiedade">
+          <Faces options={["😌", "🙂", "😐", "😟", "😰"]} value={anxiety} onChange={setAnxiety} />
+          <p style={hintc}>Tranquilo → muito ansioso</p>
+        </Card>
+      )}
       {has("energy") && (
         <Card title="Sua energia hoje">
           <Faces options={["🪫", "▂", "▄", "▆", "█"]} value={energy} onChange={setEnergy} small />
           <p style={hintc}>Sem energia → cheio de energia</p>
+        </Card>
+      )}
+      {has("appetite") && (
+        <Card title="Seu apetite hoje">
+          <Faces options={["🍽️", "🥄", "😐", "🙂", "😋"]} value={appetite} onChange={setAppetite} />
+          <p style={hintc}>Sem apetite → ótimo apetite</p>
         </Card>
       )}
       {has("sleep") && (
