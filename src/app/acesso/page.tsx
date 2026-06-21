@@ -17,23 +17,44 @@ export default function AcessoPacientePage() {
   async function entrar() {
     setErr(null); setBusy(true);
     try {
-      // chama a Edge Function que cria (1º acesso) ou valida o paciente
+      const cpfD = onlyDigits(cpf);
+      const phoneD = onlyDigits(phone);
+
+      // 1) Edge Function: cria (1º acesso) ou valida o paciente
       const res = await fetch(`${SUPABASE_URL}/functions/v1/patient-access`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cpf: onlyDigits(cpf), phone: onlyDigits(phone) }),
+        body: JSON.stringify({ cpf: cpfD, phone: phoneD }),
       });
-      const data = await res.json();
-      if (!data.ok) { setErr(data.error ?? "Não foi possível acessar."); setBusy(false); return; }
 
-      // faz login com as credenciais internas (e-mail derivado do CPF + telefone)
+      let data: { ok?: boolean; email?: string; error?: string } = {};
+      try { data = await res.json(); } catch { data = {}; }
+
+      if (!res.ok || !data.ok) {
+        // mostra o motivo real vindo da função (ajuda a diagnosticar)
+        setErr(data.error ? `${data.error}` : `Falha no acesso (código ${res.status}).`);
+        setBusy(false);
+        return;
+      }
+      if (!data.email) {
+        setErr("A função não retornou o e-mail interno. Verifique o deploy da Edge Function.");
+        setBusy(false);
+        return;
+      }
+
+      // 2) login com as credenciais internas
       const { error } = await supabase.auth.signInWithPassword({
-        email: data.email, password: onlyDigits(phone),
+        email: data.email, password: phoneD,
       });
-      if (error) { setErr("Telefone não confere com o cadastro."); setBusy(false); return; }
+      if (error) {
+        setErr(`Não foi possível entrar: ${error.message}`);
+        setBusy(false);
+        return;
+      }
       router.push("/app");
-    } catch {
-      setErr("Erro de conexão. Tente novamente."); setBusy(false);
+    } catch (e) {
+      setErr(`Erro de conexão: ${e instanceof Error ? e.message : "tente novamente"}.`);
+      setBusy(false);
     }
   }
 

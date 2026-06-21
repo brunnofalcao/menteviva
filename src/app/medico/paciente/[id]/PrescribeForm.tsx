@@ -31,6 +31,9 @@ export default function PrescribeForm({ patientId }: { patientId: string }) {
       <label style={lbl}>Medicamento</label>
       <input name="name" required placeholder="Ex.: Sertralina" style={inp} />
 
+      <label style={lbl}>Princípio ativo (opcional)</label>
+      <input name="active_ingredient" placeholder="Ex.: Cloridrato de sertralina" style={inp} />
+
       <div style={{ display: "flex", gap: 10 }}>
         <div style={{ flex: 1 }}><label style={lbl}>Dose</label><input name="dose" placeholder="50mg" style={inp} /></div>
         <div style={{ flex: 1 }}><label style={lbl}>Forma</label>
@@ -79,6 +82,20 @@ export default function PrescribeForm({ patientId }: { patientId: string }) {
         <option value="push">🔔 Notificação (grátis)</option>
         <option value="whatsapp">💬 WhatsApp</option>
       </select>
+
+      <label style={lbl}>Indicação (opcional)</label>
+      <input name="indication" placeholder="Ex.: Depressão, ansiedade" style={inp} />
+
+      <label style={lbl}>Instruções para o paciente (opcional)</label>
+      <input name="instructions" placeholder="Ex.: Tomar após o café" style={inp} />
+
+      <label style={lbl}>Instruções para o cuidador (opcional)</label>
+      <input name="caregiver_instructions" placeholder="Ex.: Confirmar que engoliu o comprimido" style={inp} />
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1 }}><label style={lbl}>Estoque atual (doses)</label><input name="stock_units" type="number" inputMode="numeric" placeholder="30" style={inp} /></div>
+        <div style={{ flex: 1 }}><label style={lbl}>Avisar com (dias antes)</label><input name="refill_alert_days" type="number" inputMode="numeric" placeholder="5" style={inp} /></div>
+      </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button type="submit" style={saveBtn}>Prescrever</button>

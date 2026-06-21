@@ -20,7 +20,12 @@ export default function ConfirmDose({ dose }: { dose: { id: string; name: string
 
   async function take() {
     setBusy(true);
-    await supabase.from("doses").update({ status: "taken", acted_at: new Date().toISOString() }).eq("id", dose.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    const late = new Date() > new Date(new Date(dose.scheduled_at).getTime() + 60 * 6e4);
+    await supabase.from("doses").update({
+      status: "taken", acted_at: new Date().toISOString(),
+      confirmed_by: user?.id ?? null, confirmed_role: "patient", was_delayed: late,
+    }).eq("id", dose.id);
     setPhase("done");
     setTimeout(() => router.push("/app"), 700);
   }
@@ -31,7 +36,11 @@ export default function ConfirmDose({ dose }: { dose: { id: string; name: string
   }
   async function skip(reason: SkipReason) {
     setBusy(true);
-    await supabase.from("doses").update({ status: "skipped", acted_at: new Date().toISOString(), skip_reason: reason }).eq("id", dose.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from("doses").update({
+      status: "skipped", acted_at: new Date().toISOString(), skip_reason: reason,
+      confirmed_by: user?.id ?? null, confirmed_role: "patient",
+    }).eq("id", dose.id);
     setPhase("done");
     setTimeout(() => router.push("/app"), 700);
   }

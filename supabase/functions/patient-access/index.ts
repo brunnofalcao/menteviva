@@ -28,6 +28,42 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = body.action ?? "login";
 
+    // ── MODO: acesso do cuidador/enfermeiro (código + telefone) ──
+    if (action === "caregiver_login") {
+      const code = (body.code ?? "").trim().toUpperCase();
+      const phone = onlyDigits(body.phone);
+      if (!code) return json({ ok: false, error: "Código obrigatório" }, 400);
+
+      // acha o membro da rede pelo código de acesso
+      const { data: member } = await db
+        .from("support_network").select("*").eq("access_code", code).maybeSingle();
+      if (!member) return json({ ok: false, error: "Código não encontrado" }, 404);
+      if (onlyDigits(member.phone ?? "") !== phone) {
+        return json({ ok: false, error: "Telefone não confere" }, 401);
+      }
+
+      const email = `cuidador.${code.toLowerCase()}@cuidador.menteviva.app`;
+      const { data: existing } = await db.auth.admin.listUsers();
+      let uid = existing.users.find((u) => u.email === email)?.id;
+
+      if (!uid) {
+        const { data: created, error: cErr } = await db.auth.admin.createUser({
+          email, password: phone, email_confirm: true,
+          user_metadata: { full_name: member.full_name, role: "caregiver" },
+        });
+        if (cErr || !created.user) return json({ ok: false, error: cErr?.message ?? "falha" }, 500);
+        uid = created.user.id;
+        await db.from("profiles").upsert({ id: uid, role: "caregiver", full_name: member.full_name });
+        // vincula o login ao membro da rede
+        await db.from("support_network").update({ member_id: uid }).eq("id", member.id);
+      } else {
+        // ressincroniza senha
+        await db.auth.admin.updateUserById(uid, { password: phone });
+      }
+
+      return json({ ok: true, email, existing: !!uid });
+    }
+
     // ── MODO: médico cria paciente JÁ ATIVO (ficha existe na hora) ──
     if (action === "create") {
       const cpf = onlyDigits(body.cpf);
@@ -81,6 +117,18 @@ Deno.serve(async (req) => {
     const user = existing.users.find((u) => u.email === email);
 
     if (user) {
+      // Blindagem: confere o telefone contra o cadastro (invite ou patients)
+      // e RESSINCRONIZA a senha, evitando travas por senha fora de sincronia.
+      const { data: inv } = await db.from("patient_invites").select("phone").eq("cpf", cpf).maybeSingle();
+      const { data: pat } = await db.from("patients").select("phone").eq("id", user.id).maybeSingle();
+      const cadPhone = onlyDigits(inv?.phone ?? pat?.phone ?? "");
+
+      // se temos um telefone de cadastro, ele precisa bater
+      if (cadPhone && cadPhone !== phone) {
+        return json({ ok: false, error: "Telefone não confere com o cadastro." }, 401);
+      }
+      // garante que a senha é o telefone informado
+      await db.auth.admin.updateUserById(user.id, { password: phone });
       return json({ ok: true, email, password_hint: "telefone", existing: true });
     }
 

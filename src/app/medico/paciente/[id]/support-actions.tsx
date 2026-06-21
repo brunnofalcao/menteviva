@@ -67,3 +67,15 @@ export async function registerEvent(formData: FormData) {
   });
   revalidatePath(`/medico/paciente/${patientId}`);
 }
+
+export async function generateMemberAccess(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const memberId = String(formData.get("memberId"));
+  const patientId = String(formData.get("patientId"));
+  // gera o código e já marca permissões operacionais básicas
+  await supabase.rpc("grant_member_access", { p_member: memberId });
+  await supabase.from("support_network")
+    .update({ can_confirm_dose: true, can_register_events: true, can_view_schedule: true })
+    .eq("id", memberId);
+  revalidatePath(`/medico/paciente/${patientId}`);
+}

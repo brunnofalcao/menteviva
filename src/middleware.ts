@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const path = req.nextUrl.pathname;
-  const isProtected = path.startsWith("/app") || path.startsWith("/medico");
+  const isProtected = path.startsWith("/app") || path.startsWith("/medico") || path.startsWith("/cuidador");
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL("/login", req.url));
@@ -46,10 +46,14 @@ export async function middleware(req: NextRequest) {
     if (path.startsWith("/app") && profile?.role !== "patient") {
       return NextResponse.redirect(new URL("/medico", req.url));
     }
+    // só cuidador acessa /cuidador
+    if (path.startsWith("/cuidador") && profile?.role !== "caregiver") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
   }
   return res;
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/medico/:path*"],
+  matcher: ["/app/:path*", "/medico/:path*", "/cuidador/:path*"],
 };

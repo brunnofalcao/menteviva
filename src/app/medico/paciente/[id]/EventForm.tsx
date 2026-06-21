@@ -6,18 +6,28 @@ const EVENTS = {
   clinical: {
     label: "Clínico",
     types: [
-      ["fall", "Queda", "high"], ["dizziness", "Tontura", "medium"], ["confusion", "Confusão", "high"],
+      // psiquiatria
+      ["suicidal_ideation", "Ideação suicida", "high"], ["self_harm", "Automutilação", "high"],
+      ["aggression", "Agressividade", "high"], ["agitation", "Agitação", "medium"],
       ["anxiety_crisis", "Crise de ansiedade", "medium"], ["panic_attack", "Ataque de pânico", "high"],
-      ["mood_change", "Mudança de humor", "medium"], ["hallucination", "Alucinação", "high"],
-      ["insomnia", "Insônia", "low"], ["pain", "Dor", "medium"], ["appetite_loss", "Perda de apetite", "medium"],
-      ["excessive_sleepiness", "Sonolência excessiva", "medium"],
+      ["mood_change", "Piora de humor", "medium"], ["hallucination", "Alucinação", "high"],
+      ["insomnia", "Insônia", "low"], ["alcohol_relapse", "Recaída álcool", "high"],
+      ["drug_relapse", "Recaída drogas", "high"], ["side_effect", "Efeito colateral", "medium"],
+      // geriatria
+      ["fall", "Queda", "high"], ["near_fall", "Quase queda", "medium"], ["dizziness", "Tontura", "medium"],
+      ["confusion", "Confusão", "high"], ["delirium_suspected", "Delirium suspeito", "high"],
+      ["excessive_sleepiness", "Sonolência excessiva", "medium"], ["pain", "Dor", "medium"],
+      ["appetite_loss", "Perda de apetite", "medium"], ["weight_loss", "Perda de peso", "medium"],
+      ["constipation", "Constipação", "low"], ["dehydration_suspected", "Desidratação suspeita", "high"],
+      ["infection_suspected", "Infecção suspeita", "high"], ["functional_decline", "Piora funcional", "medium"],
     ],
   },
   treatment: {
     label: "Tratamento",
     types: [
       ["medication_refused", "Recusou medicação", "high"], ["medication_forgotten", "Esqueceu medicação", "medium"],
-      ["medication_unavailable", "Medicação em falta", "high"], ["emergency_visit", "Foi ao pronto-socorro", "high"],
+      ["medication_unavailable", "Medicação em falta", "high"], ["medication_abandonment", "Abandono de medicação", "high"],
+      ["food_refusal", "Recusa alimentar", "medium"], ["emergency_visit", "Foi ao pronto-socorro", "high"],
       ["hospitalization", "Internação", "high"],
     ],
   },

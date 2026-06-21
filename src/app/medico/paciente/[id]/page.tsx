@@ -7,7 +7,7 @@ import PreConsultAI from "./PreConsultAI";
 import DiagnosisSection from "./DiagnosisSection";
 import EditPatientButton from "./EditPatientButton";
 import { applyProtocol, toggleModule, pauseMedication, deleteMedication } from "./actions";
-import { removeSupportMember } from "./support-actions";
+import { removeSupportMember, generateMemberAccess } from "./support-actions";
 import { medVisual, medSubtitle } from "@/lib/med-visual";
 
 const REL_LABEL: Record<string, string> = {
@@ -16,12 +16,18 @@ const REL_LABEL: Record<string, string> = {
   caregiver: "Cuidador(a)", nurse: "Enfermeiro(a)", other: "Familiar",
 };
 const EVENT_LABEL: Record<string, string> = {
-  fall: "Queda", dizziness: "Tontura", confusion: "Confusão", anxiety_crisis: "Crise de ansiedade",
-  panic_attack: "Ataque de pânico", mood_change: "Mudança de humor", hallucination: "Alucinação",
-  insomnia: "Insônia", pain: "Dor", appetite_loss: "Perda de apetite", excessive_sleepiness: "Sonolência",
-  medication_refused: "Recusou medicação", medication_forgotten: "Esqueceu medicação",
-  medication_unavailable: "Medicação em falta", emergency_visit: "Pronto-socorro", hospitalization: "Internação",
-  observation: "Observação",
+  fall: "Queda", near_fall: "Quase queda", dizziness: "Tontura", confusion: "Confusão",
+  delirium_suspected: "Delirium suspeito", anxiety_crisis: "Crise de ansiedade",
+  panic_attack: "Ataque de pânico", mood_change: "Piora de humor", hallucination: "Alucinação",
+  insomnia: "Insônia", pain: "Dor", appetite_loss: "Perda de apetite", weight_loss: "Perda de peso",
+  excessive_sleepiness: "Sonolência", suicidal_ideation: "Ideação suicida", self_harm: "Automutilação",
+  aggression: "Agressividade", agitation: "Agitação", alcohol_relapse: "Recaída álcool",
+  drug_relapse: "Recaída drogas", side_effect: "Efeito colateral", constipation: "Constipação",
+  dehydration_suspected: "Desidratação suspeita", infection_suspected: "Infecção suspeita",
+  functional_decline: "Piora funcional", medication_refused: "Recusou medicação",
+  medication_forgotten: "Esqueceu medicação", medication_unavailable: "Medicação em falta",
+  medication_abandonment: "Abandono de medicação", food_refusal: "Recusa alimentar",
+  emergency_visit: "Pronto-socorro", hospitalization: "Internação", observation: "Observação",
 };
 
 const PROTOCOLS = ["Depressão", "Transtorno bipolar", "Ansiedade", "TDAH", "Personalizado"];
@@ -46,7 +52,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
   // rede de apoio
   const { data: support } = await supabase
     .from("support_network")
-    .select("id, full_name, relationship, phone, is_caregiver, is_nurse")
+    .select("id, full_name, relationship, phone, is_caregiver, is_nurse, access_code")
     .eq("patient_id", id);
 
   // eventos recentes
@@ -308,12 +314,26 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
                   {s.is_caregiver && " · Cuidador"}{s.is_nurse && " · Enfermeiro"}
                   {s.phone ? ` · ${s.phone}` : ""}
                 </div>
+                {s.access_code && (
+                  <div style={{ marginTop: 5, fontSize: 12, color: "var(--accent-ink, #2C6BBF)" }}>
+                    Acesso: <b style={{ fontFamily: "monospace", letterSpacing: ".05em" }}>{s.access_code}</b> <span style={{ color: "#9BA29D" }}>(senha: telefone)</span>
+                  </div>
+                )}
               </div>
-              <form action={removeSupportMember}>
-                <input type="hidden" name="memberId" value={s.id} />
-                <input type="hidden" name="patientId" value={id} />
-                <button style={miniBtn}>Remover</button>
-              </form>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {(s.is_caregiver || s.is_nurse) && !s.access_code && (
+                  <form action={generateMemberAccess}>
+                    <input type="hidden" name="memberId" value={s.id} />
+                    <input type="hidden" name="patientId" value={id} />
+                    <button style={{ ...miniBtn, borderColor: "var(--accent)", color: "var(--accent-ink, #2C6BBF)" }}>Gerar acesso</button>
+                  </form>
+                )}
+                <form action={removeSupportMember}>
+                  <input type="hidden" name="memberId" value={s.id} />
+                  <input type="hidden" name="patientId" value={id} />
+                  <button style={miniBtn}>Remover</button>
+                </form>
+              </div>
             </div>
           ))}
           <div style={{ marginTop: 14 }}><AddSupportForm patientId={id} /></div>

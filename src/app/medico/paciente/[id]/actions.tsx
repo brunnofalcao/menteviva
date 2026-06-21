@@ -15,16 +15,33 @@ export async function prescribeMedication(formData: FormData) {
   const channel = String(formData.get("channel"));
   const endsAtRaw = String(formData.get("ends_at") || "").trim();
   const ends_at = endsAtRaw || null;
+  const active_ingredient = String(formData.get("active_ingredient") || "").trim() || null;
+  const indication = String(formData.get("indication") || "").trim() || null;
+  const instructions = String(formData.get("instructions") || "").trim() || null;
+  const caregiver_instructions = String(formData.get("caregiver_instructions") || "").trim() || null;
+  const stockRaw = String(formData.get("stock_units") || "").trim();
+  const stock_units = stockRaw ? parseInt(stockRaw) : null;
+  const refillRaw = String(formData.get("refill_alert_days") || "").trim();
+  const refill_alert_days = refillRaw ? parseInt(refillRaw) : null;
   const times = String(formData.get("times"))
     .split(",").map((t) => t.trim()).filter(Boolean);
 
   if (!name || times.length === 0) return;
 
-  await supabase.from("medications").insert({
+  const { data: med } = await supabase.from("medications").insert({
     patient_id: patientId,
     source: "doctor",
     name, dose, form, frequency, times, channel, ends_at,
+    active_ingredient, indication, instructions, caregiver_instructions,
+    stock_units, refill_alert_days,
     created_by: user.id,
+  }).select("id").single();
+
+  // auditoria
+  await supabase.rpc("log_action", {
+    p_action: "prescribe_medication", p_entity: "medication",
+    p_entity_id: med?.id ?? null, p_patient: patientId,
+    p_detail: { name, dose },
   });
   revalidatePath(`/medico/paciente/${patientId}`);
 }
